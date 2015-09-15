@@ -177,6 +177,7 @@ help()
     _("                         Default: Autocycle 115.2k, 57.6k 38.4k, 19.2k\n");
 #endif
     cout << _(
+	" -i, --ir                serial device is an ir dongle\n"
 	" -p, --port=[HOST:]PORT  Listen on host HOST, port PORT.\n"
 	"                         Default for HOST: 127.0.0.1\n"
 	"                         Default for PORT: "
@@ -192,6 +193,7 @@ static struct option opts[] = {
     {"dontfork",   no_argument,       0, 'd'},
     {"autoexit",   no_argument,       0, 'e'},
     {"help",       no_argument,       0, 'h'},
+    {"ir",         no_argument,       0, 'i'},
     {"version",    no_argument,       0, 'V'},
     {"verbose",    required_argument, 0, 'v'},
     {"port",       required_argument, 0, 'p'},
@@ -254,6 +256,7 @@ main(int argc, char **argv)
 {
     int pid;
     bool dofork = true;
+    bool usingIr = false;
 
     int sockNum = DPORT;
     int baudRate = DSPEED;
@@ -269,7 +272,7 @@ main(int argc, char **argv)
 	sockNum = ntohs(se->s_port);
 
     while (1) {
-	int c = getopt_long(argc, argv, "hdeVb:s:p:v:", opts, NULL);
+	int c = getopt_long(argc, argv, "hideVb:s:p:v:", opts, NULL);
 	if (c == -1)
 	    break;
 	switch (c) {
@@ -279,6 +282,9 @@ main(int argc, char **argv)
 	    case 'V':
 		cout << _("ncpd Version ") << VERSION << endl;
 		return 0;
+            case 'i':
+		usingIr = true;
+		break;
 	    case 'h':
 		help();
 		return 0;
@@ -374,7 +380,7 @@ main(int argc, char **argv)
 		    }
 		}
 		memset(scp, 0, sizeof(scp));
-		theNCP = new ncp(serialDevice, baudRate, nverbose);
+		theNCP = new ncp(serialDevice, baudRate, nverbose, usingIr);
 		if (!theNCP) {
 		    lerr << "Could not create NCP object" << endl;
 		    exit(-1);

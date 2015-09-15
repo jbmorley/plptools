@@ -45,6 +45,7 @@
 #include "link.h"
 #include "main.h"
 
+#define IR_TURN_TIME 1000 /* Time to wait between RX and TX to let diode in Psion recover from being blinded */
 #define BUFLEN 4096 // Must be a power of 2
 #define BUFMASK (BUFLEN-1)
 #define hasSpace(dir) (((dir##Write + 1) & BUFMASK) != dir##Read)
@@ -97,6 +98,10 @@ static void *pump_run(void *arg)
 			count = p->outWrite - p->outRead;
 			if (count < 0)
 			    count = (BUFLEN - p->outRead);
+			if (p->usingIr && p->lastWasRX) {
+			    p->lastWasRX = false;
+                            usleep(IR_TURN_TIME);
+			}
 			res = write(p->fd, &p->outBuffer[p->outRead], count);
 			if (res > 0) {
 			    if (pumpverbose & PKT_DEBUG_DUMP) {
@@ -119,6 +124,7 @@ static void *pump_run(void *arg)
 			    count = (BUFLEN - p->inWrite);
 			res = read(p->fd, &p->inBuffer[p->inWrite], count);
 			if (res > 0) {
+			    p->lastWasRX = true;
 			    if (pumpverbose & PKT_DEBUG_DUMP) {
 				int i;
 				printf("pump: read %d bytes: (", res);
@@ -153,15 +159,17 @@ static const int baud_table[] = {
 using namespace std;
 
 packet::
-packet(const char *fname, int _baud, Link *_link, unsigned short _verbose)
+packet(const char *fname, int _baud, Link *_link, unsigned short _verbose, bool _usingIr)
 {
     verbose = pumpverbose = _verbose;
+    usingIr = _usingIr;
     devname = strdup(fname);
     assert(devname);
     baud = _baud;
     theLINK = _link;
     isEPOC = false;
     justStarted = true;
+    lastWasRX = false;
 
     // Initialize CRC table
     crc_table[0] = 0;
@@ -504,7 +512,7 @@ linkFailed()
 	serialStatus = arg;
     }
     // TODO: Check for a solution on Solaris.
-    if ((arg & TIOCM_DSR) == 0) {
+    if (!usingIr && ((arg & TIOCM_DSR) == 0)) {
 	failed = true;
     }
     if ((verbose & PKT_DEBUG_LOG) && lastFatal)

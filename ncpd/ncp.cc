@@ -45,7 +45,7 @@
 
 using namespace std;
 
-ncp::ncp(const char *fname, int baud, unsigned short _verbose)
+ncp::ncp(const char *fname, int baud, unsigned short _verbose, bool _usingIr)
 {
     channelPtr = new channel*[MAX_CHANNELS_PSION + 1];
     assert(channelPtr);
@@ -56,6 +56,7 @@ ncp::ncp(const char *fname, int baud, unsigned short _verbose)
 
     failed = false;
     verbose = _verbose;
+    usingIr = _usingIr;
 
     // until detected on receipt of INFO we use these.
     maxChannels = MAX_CHANNELS_SIBO;
@@ -66,7 +67,7 @@ ncp::ncp(const char *fname, int baud, unsigned short _verbose)
     for (int i = 0; i < MAX_CHANNELS_PSION; i++)
 	channelPtr[i] = NULL;
 
-    l = new Link(fname, baud, this, verbose);
+    l = new Link(fname, baud, this, verbose, usingIr);
     assert(l);
 }
 

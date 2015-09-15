@@ -57,7 +57,7 @@ private:
 
 class ncp {
 public:
-    ncp(const char *fname, int baud, unsigned short _verbose = 0);
+    ncp(const char *fname, int baud, unsigned short _verbose = 0, bool usingIr = false);
     ~ncp();
 
     int connect(channel *c); // returns channel, or -1 if failure
@@ -105,6 +105,7 @@ private:
 
     Link *l;
     unsigned short verbose;
+    bool usingIr;
     channel **channelPtr;
     bufferStore *messageList;
     int *remoteChanList;

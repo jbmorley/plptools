@@ -46,7 +46,7 @@ class Link;
 class packet
 {
 public:
-    packet(const char *fname, int baud, Link *_link, unsigned short verbose = 0);
+    packet(const char *fname, int baud, Link *_link, unsigned short verbose = 0, bool usingIr = false);
     ~packet();
 
     /**
@@ -107,6 +107,8 @@ private:
     bool lastFatal;
     bool isEPOC;
     bool justStarted;
+    bool lastWasRX;
+    bool usingIr;
 
     char *devname;
     int baud;
