@@ -1509,8 +1509,8 @@ command_generator(
     return NULL;
 }
 
-static char * null_completion(const char *, int) {
-    return "";
+static int null_completion(const char *, int) {
+    return 0;
 }
 
 static char **
@@ -1532,7 +1532,9 @@ do_completion(const char *text, int start, int end)
 	const char *name;
 	char *p;
 
+#if 0 //XXX: need autoconf test for this variable
 	rl_filename_quoting_desired = 1;
+#endif
 	while ((name = localfile_commands[idx])) {
 	    idx++;
 	    if (!strncmp(name, rl_line_buffer, strlen(name))) {
