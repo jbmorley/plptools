@@ -932,7 +932,7 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, int xargc, char 
 		    cout << files[0] << endl;
 		    files.pop_front();
 		}
-	    free(f1);
+	    // free(f1);
 	    continue;
 	}
 	if (!strcmp(argv[0], "lcd")) {
