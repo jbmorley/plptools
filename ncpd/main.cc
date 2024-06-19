@@ -20,14 +20,16 @@
  */
 #include "config.h"
 
+#include "ncpd.h"
+
 #include <string>
 #include <cstring>
 #include <iostream>
 
-#include <bufferstore.h>
-#include <ppsocket.h>
-#include <iowatch.h>
-#include <log.h>
+#include "bufferstore.h"
+#include "ppsocket.h"
+#include "iowatch.h"
+#include "log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,9 +39,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <pthread.h>
-#include <plpintl.h>
+#include "plpintl.h"
 
-#include "ignore-value.h"
+//#include "ignore-value.h"
 
 #include "ncp.h"
 #include "socketchan.h"
@@ -247,7 +249,7 @@ link_thread(void *arg)
 }
 
 int
-main(int argc, char **argv)
+run(int argc, char **argv)
 {
     int pid;
     bool dofork = true;
@@ -359,7 +361,7 @@ main(int argc, char **argv)
 			 << sockNum << _(" using device ") << serialDevice
 			 << endl;
 		    setsid();
-		    ignore_value(chdir("/"));
+            chdir("/");
 		    int devnull =
 			open("/dev/null", O_RDWR, 0);
 		    if (devnull != -1) {

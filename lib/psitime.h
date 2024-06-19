@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <plpintl.h>
+#include "plpintl.h"
 
 /**
  * Holds a Psion time value.

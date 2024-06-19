@@ -26,7 +26,7 @@
 #include <map>
 #include <string>
 
-#include <plpintl.h>
+#include "plpintl.h"
 #include <assert.h>
 
 /**

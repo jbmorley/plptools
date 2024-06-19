@@ -25,9 +25,9 @@
 
 #include <time.h>
 
-#include <bufferstore.h>
-#include <bufferarray.h>
-#include <rfsv.h>
+#include "bufferstore.h"
+#include "bufferarray.h"
+#include "rfsv.h"
 
 #include "ncp.h"
 #include "linkchan.h"
