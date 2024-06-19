@@ -45,7 +45,7 @@ public:
     * @param buf Pointer to data for initialization.
     * @param len Length of data for initialization.
     */
-    bufferStore(const unsigned char *, long);
+    bufferStore(const unsigned char *buf, long len);
 
     /**
     * Destroys a bufferStore instance.
@@ -59,7 +59,7 @@ public:
     * @param b A bufferStore, whose content is
     * used for initialization.
     */
-    bufferStore(const bufferStore &);
+    bufferStore(const bufferStore &b);
 
     /**
     * Copies a bufferStore.
@@ -127,7 +127,7 @@ public:
     *
     * @returns The stream.
     */
-    friend std::ostream &operator<<(std::ostream &, const bufferStore &);
+    friend std::ostream &operator<<(std::ostream &s, const bufferStore &b);
 
     /**
     * Tests if the bufferStore is empty.
@@ -166,7 +166,7 @@ public:
     *
     * @param w The word to append.
     */
-    void addWord(int);
+    void addWord(int w);
 
     /**
     * Appends a dword to the content of this instance.
@@ -234,7 +234,7 @@ public:
     *
     * @param w The word to append.
     */
-    void prependWord(int);
+    void prependWord(int w);
 
 private:
     void checkAllocd(long newLen);

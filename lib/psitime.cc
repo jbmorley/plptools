@@ -226,8 +226,8 @@ evalOffset(psi_timezone ptz, time_t time, bool valid) {
     }
     // Substract out local timezone, it gets added
     // later
-    time_t now = ::time(0);
-    struct tm *now_tm = localtime(&now);
+//    time_t now = ::time(0);
+//    struct tm *now_tm = localtime(&now);
     offset -= timezone;
 
     offset *= 1000000;
