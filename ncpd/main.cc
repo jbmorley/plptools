@@ -248,6 +248,74 @@ link_thread(void *arg)
     return NULL;
 }
 
+int ncpd(int sockNum,
+         int baudRate,
+         const char *host,
+         const char *serialDevice,
+         unsigned short nverbose,
+         statusCallback_t statusCallback,
+         void *context)
+{
+    signal(SIGTERM, term_handler);
+    signal(SIGINT, int_handler);
+    skt.setWatch(&accept_iow);
+    if (!skt.listen(host, sockNum))
+    cerr << "listen on " << host << ":" << sockNum << ": "
+         << strerror(errno) << endl;
+    else {
+//    if (dofork || autoexit) {
+//        openlog("ncpd", LOG_CONS|LOG_PID, LOG_DAEMON);
+//        dlog.setOn(true);
+//        elog.setOn(true);
+//        ilog.setOn(true);
+//        linf << _("daemon started. Listening at ") << host << ":"
+//         << sockNum << _(" using device ") << serialDevice
+//         << endl;
+//        setsid();
+//        chdir("/");
+//        int devnull =
+//        open("/dev/null", O_RDWR, 0);
+//        if (devnull != -1) {
+//        dup2(devnull, STDIN_FILENO);
+//        dup2(devnull, STDOUT_FILENO);
+//        dup2(devnull, STDERR_FILENO);
+//        if (devnull > 2)
+//            close(devnull);
+//        }
+//    }
+    memset(scp, 0, sizeof(scp));
+    theNCP = new ncp(serialDevice, baudRate, nverbose, statusCallback, context);
+    if (!theNCP) {
+        lerr << "Could not create NCP object" << endl;
+        exit(-1);
+    }
+    pthread_t thr_a, thr_b;
+    if (pthread_create(&thr_a, NULL, link_thread, NULL) != 0) {
+        lerr << "Could not create Link thread" << endl;
+        exit(-1);
+    }
+    if (pthread_create(&thr_b, NULL,
+               pollSocketConnections, NULL) != 0) {
+        lerr << "Could not create Socket thread" << endl;
+        exit(-1);
+    }
+    while (active)
+        checkForNewSocketConnection();
+    linf << _("terminating") << endl;
+    void *ret;
+    pthread_join(thr_a, &ret);
+            linf << _("joined Link thread") << endl;
+    pthread_join(thr_b, &ret);
+            linf << _("joined Socket thread") << endl;
+    delete theNCP;
+            linf << _("shut down NCP") << endl;
+    }
+    skt.closeSocket();
+        linf << _("socket closed") << endl;
+    return 0;
+}
+
+
 int
 run(int argc, char **argv)
 {
@@ -345,62 +413,7 @@ run(int argc, char **argv)
 	pid = 0;
     switch (pid) {
 	case 0:
-	    signal(SIGTERM, term_handler);
-	    signal(SIGINT, int_handler);
-	    skt.setWatch(&accept_iow);
-	    if (!skt.listen(host, sockNum))
-		cerr << "listen on " << host << ":" << sockNum << ": "
-		     << strerror(errno) << endl;
-	    else {
-		if (dofork || autoexit) {
-		    openlog("ncpd", LOG_CONS|LOG_PID, LOG_DAEMON);
-		    dlog.setOn(true);
-		    elog.setOn(true);
-		    ilog.setOn(true);
-		    linf << _("daemon started. Listening at ") << host << ":"
-			 << sockNum << _(" using device ") << serialDevice
-			 << endl;
-		    setsid();
-            chdir("/");
-		    int devnull =
-			open("/dev/null", O_RDWR, 0);
-		    if (devnull != -1) {
-			dup2(devnull, STDIN_FILENO);
-			dup2(devnull, STDOUT_FILENO);
-			dup2(devnull, STDERR_FILENO);
-			if (devnull > 2)
-			    close(devnull);
-		    }
-		}
-		memset(scp, 0, sizeof(scp));
-		theNCP = new ncp(serialDevice, baudRate, nverbose);
-		if (!theNCP) {
-		    lerr << "Could not create NCP object" << endl;
-		    exit(-1);
-		}
-		pthread_t thr_a, thr_b;
-		if (pthread_create(&thr_a, NULL, link_thread, NULL) != 0) {
-		    lerr << "Could not create Link thread" << endl;
-		    exit(-1);
-		}
-		if (pthread_create(&thr_b, NULL,
-				   pollSocketConnections, NULL) != 0) {
-		    lerr << "Could not create Socket thread" << endl;
-		    exit(-1);
-		}
-		while (active)
-		    checkForNewSocketConnection();
-		linf << _("terminating") << endl;
-		void *ret;
-		pthread_join(thr_a, &ret);
-                linf << _("joined Link thread") << endl;
-		pthread_join(thr_b, &ret);
-                linf << _("joined Socket thread") << endl;
-		delete theNCP;
-                linf << _("shut down NCP") << endl;
-	    }
-	    skt.closeSocket();
-            linf << _("socket closed") << endl;
+            exit(ncpd(sockNum, baudRate, host, serialDevice, nverbose, 0, 0));
 	    break;
 	case -1:
 	    lerr << "fork: " << strerror(errno) << endl;
