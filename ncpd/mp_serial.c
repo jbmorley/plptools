@@ -123,7 +123,7 @@ init_serial(const char *dev, int speed, int debug)
     }
     if ((fd = open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK, 0)) < 0) {
 	perror(dev);
-	exit(1);
+        return -1;
     }
     if (seteuid(euid)) {
 	perror("seteuid back");
