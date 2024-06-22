@@ -22,7 +22,7 @@
 #ifndef _RFSVFACTORY_H_
 #define _RFSVFACTORY_H_
 
-#include <rfsv.h>
+#include "rfsv.h"
 
 class ppsocket;
 
@@ -62,7 +62,7 @@ public:
     * @returns A pointer to a newly created rfsv instance or
     * NULL on failure.
     */
-    virtual rfsv * create(bool);
+    virtual rfsv * create(bool reconnect);
 
     /**
     * Retrieve an error code.

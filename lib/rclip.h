@@ -20,8 +20,8 @@
 #ifndef _RCLIP_H_
 #define _RCLIP_H_
 
-#include <rfsv.h>
-#include <Enum.h>
+#include "rfsv.h"
+#include "Enum.h"
 
 class ppsocket;
 class bufferStore;
@@ -164,7 +164,6 @@ protected:
     * to E_PSI_FILE_DISC.
     *
     * @param cc The command to execute on the remote side.
-    * @param data Additional data for this command.
     *
     * @returns true on success, false on failure.
     */
