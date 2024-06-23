@@ -24,6 +24,12 @@
 #include "config.h"
 #include "ncpd.h"
 
+#include "main.h"
+#include "socketchan.h"
+#include "mp_serial.h"
+#include "packet.h"
+#include "link.h"
+
 #include <vector>
 
 #include "bufferstore.h"

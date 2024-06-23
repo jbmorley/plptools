@@ -269,7 +269,7 @@ get_upto(FILE *fp, const char *term, size_t *final_len)
     size_t len = 256;
     int c;
     char *l = (char *)malloc(len), *s = l;
-    
+
     assert(l);
     for (c = getc(fp); c != EOF && strchr(term, c) == NULL; c = getc(fp)) {
         if (s == l + len) {
@@ -284,7 +284,7 @@ get_upto(FILE *fp, const char *term, size_t *final_len)
         assert(l);
     }
     *s++ = '\0';
-    
+
     if (final_len)
         *final_len = s - l;
     l = (char *)realloc(l, s - l);
@@ -460,7 +460,7 @@ ftp::putClipText(rpcs & r, rfsv & a, rclip & rc, ppsocket & rclipSocket, const c
     data = slurp(fp, &len);
     fclose(fp);
     ascii2PsiText(data, len);
-        
+
     res = a.freplacefile(0x200, CLIPFILE, fh);
     if (res == rfsv::E_PSI_GEN_NONE) {
 	// Base Header

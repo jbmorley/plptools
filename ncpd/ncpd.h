@@ -21,19 +21,14 @@
 #ifndef _ncpd_h_
 #define _ncpd_h_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef void (*statusCallback_t)(void *, int);
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int run(int argc, char **argv);
-#ifdef __cplusplus
-}
-#endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 int ncpd(int sockNum,
          int baudRate,
          const char *host,
@@ -41,6 +36,7 @@ int ncpd(int sockNum,
          unsigned short nverbose,
          statusCallback_t statusCallback,
          void *context);
+
 #ifdef __cplusplus
 }
 #endif
