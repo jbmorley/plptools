@@ -13,6 +13,7 @@ public:
 
     bool connect(const char * const Peer, int PeerPort);
     Enum<rfsv::errs> dir(const char * const name, PlpDir &ret);
+    Enum<rfsv::errs> devlist(uint32_t &devbits);
 private:
     ppsocket *_socket;
     rfsvfactory *_rfsvfactory;
