@@ -37,9 +37,24 @@ Enum<rfsv::errs> RFSVClient::dir(const char * const name, PlpDir &ret) {
     return _rfsv->dir(name, ret);
 }
 
-Enum<rfsv::errs> RFSVClient::devlist(uint32_t &devbits) {
+rfsv::errs RFSVClient::devlist(uint32_t &devbits) {
     assert(_rfsv);
-    return _rfsv->devlist(devbits);
+    return _rfsv->devlist(devbits).value;
+}
+
+rfsv::errs RFSVClient::mkdir(const char * const name) {
+    assert(_rfsv);
+    return _rfsv->mkdir(name).value;
+}
+
+rfsv::errs RFSVClient::rmdir(const char * const name) {
+    assert(_rfsv);
+    return _rfsv->rmdir(name).value;
+}
+
+rfsv::errs RFSVClient::remove(const char * const name) {
+    assert(_rfsv);
+    return _rfsv->remove(name);
 }
 
 const char *plpdirent_get_name(PlpDirent *dirent) {
