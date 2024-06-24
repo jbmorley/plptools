@@ -12,11 +12,12 @@ public:
     ~RFSVClient();
 
     bool connect(const char * const Peer, int PeerPort);
-    Enum<rfsv::errs> dir(const char * const name, PlpDir &ret);
+    rfsv::errs dir(const char * const name, PlpDir &ret);
     rfsv::errs devlist(uint32_t &devbits);
     rfsv::errs mkdir(const char * const name);
     rfsv::errs rmdir(const char * const name);
     rfsv::errs remove(const char * const name);
+    rfsv::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
 private:
     ppsocket *_socket;
     rfsvfactory *_rfsvfactory;

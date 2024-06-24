@@ -32,9 +32,9 @@ bool RFSVClient::connect(const char * const Peer, int PeerPort) {
     return true;
 }
 
-Enum<rfsv::errs> RFSVClient::dir(const char * const name, PlpDir &ret) {
+rfsv::errs RFSVClient::dir(const char * const name, PlpDir &ret) {
     assert(_rfsv);
-    return _rfsv->dir(name, ret);
+    return _rfsv->dir(name, ret).value;
 }
 
 rfsv::errs RFSVClient::devlist(uint32_t &devbits) {
@@ -55,6 +55,11 @@ rfsv::errs RFSVClient::rmdir(const char * const name) {
 rfsv::errs RFSVClient::remove(const char * const name) {
     assert(_rfsv);
     return _rfsv->remove(name);
+}
+
+rfsv::errs RFSVClient::copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb) {
+    assert(_rfsv);
+    return _rfsv->copyFromPsion(from, to, ptr, cb);
 }
 
 const char *plpdirent_get_name(PlpDirent *dirent) {
