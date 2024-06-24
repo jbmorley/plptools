@@ -48,9 +48,29 @@
 #include <signal.h>
 #include <netdb.h>
 
-#include "ignore-value.h"
-#include "xalloc.h"
-#include "xvasprintf.h"
+// #include "xalloc.h"
+// #include "xvasprintf.h"
+
+char *xasprintf(const char *fmt, ...) {
+    char *result;
+    va_list args;
+    va_start(args, fmt);
+    if (vasprintf(&result, fmt, args) == -1) {
+        // Handle memory allocation failure
+        result = NULL;
+    }
+    va_end(args);
+    return result;
+}
+
+char *xstrdup(const char *s) {
+    char *result = strdup(s);
+    if (result == NULL) {
+        fprintf(stderr, "Memory allocation failed\n");
+        exit(EXIT_FAILURE);
+    }
+    return result;
+}
 
 #include "ftp.h"
 
@@ -890,6 +910,7 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, int xargc, char 
 		cerr << _("Error: ") << res << endl;
 	    continue;
 	}
+	// TODO: LOWER
 	if (!strcmp(argv[0], "ls") || !strcmp(argv[0], "dir")) {
 	    PlpDir files;
 	    char *dname = psionDir, *dtmp, *f1;
@@ -1197,14 +1218,14 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, int xargc, char 
 		strcat(cmd, argv[i]);
 	    }
 	    if (strlen(cmd))
-		ignore_value(system(cmd));
+		system(cmd);
 	    else {
 		const char *sh;
 		cout << _("Starting subshell ...\n");
 		sh = getenv("SHELL");
 		if (!sh)
 		    sh = "/bin/sh";
-		ignore_value(system(sh));
+		system(sh);
 	    }
 	    continue;
 	}

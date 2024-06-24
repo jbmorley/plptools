@@ -22,8 +22,6 @@
 
 #include "log.h"
 
-//#include "ignore-value.h"
-
 #include <unistd.h>
 
 logbuf::logbuf(int loglevel, int fd) {
@@ -41,7 +39,7 @@ int logbuf::overflow(int c) {
 	if (_on)
 	    syslog(_level, "%s", buf);
 	else if (_fd != -1)
-	    /* ignore_value( */write(_fd, buf, len + 1) /*)*/;
+	    write(_fd, buf, len + 1);
 	ptr = buf;
 	len = 0;
 	return 0;
