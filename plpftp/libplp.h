@@ -6,32 +6,19 @@
 #include <rfsvfactory.h>
 #include <plpdirent.h>
 
-typedef struct Context {
-    ppsocket *fileServerSocket;
-    rfsvfactory *fileServerFactory;
-    rfsv *fileServer;
-} Context;
+class RFSVClient {
+public:
+    RFSVClient();
+    ~RFSVClient();
 
-typedef struct DirectoryEntry {
-    char *name;
-    long time;
-    long attr;
-    long size;
-    long links;
-    struct DirectoryEntry *next;
-} DirectoryEntry;
+    bool connect(const char * const Peer, int PeerPort);
+    Enum<rfsv::errs> dir(const char * const name, PlpDir &ret);
+private:
+    ppsocket *_socket;
+    rfsvfactory *_rfsvfactory;
+    rfsv *_rfsv;
+};
 
-typedef struct DirectoryList {
-    DirectoryEntry *entries;
-    int count;
-} DirectoryList;
+extern const char *plpdirent_get_name(PlpDirent *dirent);
 
 #endif
-
-extern void directory_list_free(DirectoryList *directoryList);
-
-extern int plp_init(Context *context);
-extern int plp_connect(Context *context, const char * const host, int port);
-extern Enum<rfsv::errs> plp_dir(Context *context, const char *path, PlpDir &ret);
-
-extern DirectoryList *rfsv_dir(Context *context, const char *file);
