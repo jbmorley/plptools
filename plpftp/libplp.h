@@ -14,6 +14,7 @@ public:
     bool connect(const char * const Peer, int PeerPort);
     rfsv::errs dir(const char * const name, PlpDir &ret);
     rfsv::errs devlist(uint32_t &devbits);
+    rfsv::errs devinfo(const char drive, PlpDrive &dinfo);
     rfsv::errs mkdir(const char * const name);
     rfsv::errs rmdir(const char * const name);
     rfsv::errs remove(const char * const name);
@@ -25,5 +26,6 @@ private:
 };
 
 extern const char *plpdirent_get_name(PlpDirent *dirent);
+extern const char *string_cstr(std::string string);
 
 #endif

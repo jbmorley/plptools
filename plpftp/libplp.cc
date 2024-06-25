@@ -42,6 +42,11 @@ rfsv::errs RFSVClient::devlist(uint32_t &devbits) {
     return _rfsv->devlist(devbits).value;
 }
 
+rfsv::errs RFSVClient::devinfo(const char drive, PlpDrive &dinfo) {
+    assert(_rfsv);
+    return _rfsv->devinfo(drive, dinfo).value;
+}
+
 rfsv::errs RFSVClient::mkdir(const char * const name) {
     assert(_rfsv);
     return _rfsv->mkdir(name).value;
@@ -64,4 +69,8 @@ rfsv::errs RFSVClient::copyFromPsion(const char *from, const char *to, void *ptr
 
 const char *plpdirent_get_name(PlpDirent *dirent) {
     return dirent->getName();
+}
+
+const char *string_cstr(std::string string) {
+    return string.c_str();
 }
