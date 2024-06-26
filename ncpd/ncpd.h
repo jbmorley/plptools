@@ -29,6 +29,8 @@ typedef void (*statusCallback_t)(void *, int);
 
 int run(int argc, char **argv);
 
+int setup_signal_handlers();
+
 int ncpd(int sockNum,
          int baudRate,
          const char *host,

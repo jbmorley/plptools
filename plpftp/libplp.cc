@@ -21,6 +21,9 @@ RFSVClient::~RFSVClient() {
 }
 
 bool RFSVClient::connect(const char * const Peer, int PeerPort) {
+    if (_rfsv) {
+        return true;
+    }
     if (!_socket->connect(Peer, PeerPort)) {
         return false;
     }

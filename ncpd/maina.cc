@@ -248,6 +248,11 @@ link_thread(void *arg)
     return NULL;
 }
 
+int setup_signal_handlers() {
+    signal(SIGTERM, term_handler);
+    signal(SIGINT, int_handler);
+}
+
 int ncpd(int sockNum,
          int baudRate,
          const char *host,
@@ -256,6 +261,8 @@ int ncpd(int sockNum,
          statusCallback_t statusCallback,
          void *context)
 {
+    numScp = 0;
+    active = true;
     signal(SIGTERM, term_handler);
     signal(SIGINT, int_handler);
     skt.setWatch(&accept_iow);

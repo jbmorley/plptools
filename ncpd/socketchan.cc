@@ -252,6 +252,10 @@ socketPoll()
 	if (res == -1) {
 	    ncpDisconnect();
 	    skt->closeSocket();
+            if (registerName) {
+                free(registerName);
+            }
+            registerName = 0;
 	} else if (res == 1) {
 	    if (a.getLen() > 8 && !strncmp(a.getString(), "NCP$", 4)) {
 		if (!ncpCommand(a))
