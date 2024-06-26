@@ -41,7 +41,9 @@ public:
     * Destroys an instance.
     */
     ~IOWatch();
- 
+
+    void reinit();
+
     /**
     * Adds a file descriptor to
     * the set of descriptors.

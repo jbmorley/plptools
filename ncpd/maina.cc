@@ -263,6 +263,8 @@ int ncpd(int sockNum,
 {
     numScp = 0;
     active = true;
+    verbose = true;
+    accept_iow.reinit();
     signal(SIGTERM, term_handler);
     signal(SIGINT, int_handler);
     skt.setWatch(&accept_iow);
