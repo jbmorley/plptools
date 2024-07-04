@@ -20,6 +20,7 @@ public:
     rfsv::errs remove(const char * const name);
     rfsv::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
     rfsv::errs copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
+    rfsv::errs fgeteattr(const char * const name, PlpDirent &e);
 private:
     ppsocket *_socket;
     rfsvfactory *_rfsvfactory;

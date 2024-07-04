@@ -75,6 +75,11 @@ rfsv::errs RFSVClient::copyToPsion(const char *from, const char *to, void *ptr, 
     return _rfsv->copyToPsion(from, to, ptr, cb);
 }
 
+rfsv::errs RFSVClient::fgeteattr(const char * const name, PlpDirent &e) {
+    assert(_rfsv);
+    return _rfsv->fgeteattr(name, e);
+}
+
 const char *plpdirent_get_name(PlpDirent *dirent) {
     return dirent->getName();
 }
