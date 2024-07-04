@@ -37,27 +37,27 @@ bool RFSVClient::connect(const char * const Peer, int PeerPort) {
 
 rfsv::errs RFSVClient::dir(const char * const name, PlpDir &ret) {
     assert(_rfsv);
-    return _rfsv->dir(name, ret).value;
+    return _rfsv->dir(name, ret);
 }
 
 rfsv::errs RFSVClient::devlist(uint32_t &devbits) {
     assert(_rfsv);
-    return _rfsv->devlist(devbits).value;
+    return _rfsv->devlist(devbits);
 }
 
 rfsv::errs RFSVClient::devinfo(const char drive, PlpDrive &dinfo) {
     assert(_rfsv);
-    return _rfsv->devinfo(drive, dinfo).value;
+    return _rfsv->devinfo(drive, dinfo);
 }
 
 rfsv::errs RFSVClient::mkdir(const char * const name) {
     assert(_rfsv);
-    return _rfsv->mkdir(name).value;
+    return _rfsv->mkdir(name);
 }
 
 rfsv::errs RFSVClient::rmdir(const char * const name) {
     assert(_rfsv);
-    return _rfsv->rmdir(name).value;
+    return _rfsv->rmdir(name);
 }
 
 rfsv::errs RFSVClient::remove(const char * const name) {
@@ -68,6 +68,11 @@ rfsv::errs RFSVClient::remove(const char * const name) {
 rfsv::errs RFSVClient::copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb) {
     assert(_rfsv);
     return _rfsv->copyFromPsion(from, to, ptr, cb);
+}
+
+rfsv::errs RFSVClient::copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb) {
+    assert(_rfsv);
+    return _rfsv->copyToPsion(from, to, ptr, cb);
 }
 
 const char *plpdirent_get_name(PlpDirent *dirent) {
