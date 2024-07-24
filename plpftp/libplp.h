@@ -4,6 +4,7 @@
 #include <ppsocket.h>
 #include <rfsv.h>
 #include <rfsvfactory.h>
+#include <rpcsfactory.h>
 #include <plpdirent.h>
 
 class RFSVClient {
@@ -29,5 +30,21 @@ private:
 
 extern const char *plpdirent_get_name(PlpDirent *dirent);
 extern const char *string_cstr(std::string string);
+extern const char *psiprocess_get_name(PsiProcess *process);
+
+class RPCSClient {
+public:
+    RPCSClient();
+    ~RPCSClient();
+
+    bool connect(const char * const Peer, int PeerPort);
+    rfsv::errs execProgram(const char *program, const char *args);
+    rfsv::errs queryPrograms(processList &ret);
+private:
+    ppsocket *_socket;
+    rpcsfactory *_rpcsfactory;
+    rpcs *_rpcs;
+};
 
 #endif
+

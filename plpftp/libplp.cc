@@ -87,3 +87,51 @@ const char *plpdirent_get_name(PlpDirent *dirent) {
 const char *string_cstr(std::string string) {
     return string.c_str();
 }
+
+const char *psiprocess_get_name(PsiProcess *process) {
+    return process->getName();
+}
+
+RPCSClient::RPCSClient() : _socket(0), _rpcsfactory(0), _rpcs(0) {
+    _socket = new ppsocket();
+}
+
+RPCSClient::~RPCSClient() {
+    if (_rpcs) {
+        delete _rpcs;
+    }
+    if (_rpcsfactory) {
+        delete _rpcsfactory;
+    }
+    delete _socket;
+}
+
+bool RPCSClient::connect(const char * const Peer, int PeerPort) {
+    if (_rpcs) {
+        return true;
+    }
+    if (!_socket->connect(Peer, PeerPort)) {
+        return false;
+    }
+    _rpcsfactory = new rpcsfactory(_socket);
+    _rpcs = _rpcsfactory->create(true);
+    if (!_rpcs) {
+        return false;
+    }
+    return true;
+}
+
+rfsv::errs RPCSClient::execProgram(const char *program, const char *args) {
+    assert(_rpcs);
+    return _rpcs->execProgram(program, args);
+}
+
+rfsv::errs RPCSClient::queryPrograms(processList &ret) {
+    assert(_rpcs);
+
+    std::string result;
+    printf("%d\n", _rpcs->getCmdLine("C:\\System\\Apps\\Adder\\Adder.app", result).value);
+    printf("%s\n", &result);
+
+    return _rpcs->queryPrograms(ret);
+}
