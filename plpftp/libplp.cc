@@ -126,12 +126,27 @@ rfsv::errs RPCSClient::execProgram(const char *program, const char *args) {
     return _rpcs->execProgram(program, args);
 }
 
-rfsv::errs RPCSClient::queryPrograms(processList &ret) {
+rfsv::errs RPCSClient::stopPrograms() {
     assert(_rpcs);
-
-    std::string result;
-    printf("%d\n", _rpcs->getCmdLine("C:\\System\\Apps\\Adder\\Adder.app", result).value);
-    printf("%s\n", &result);
-
-    return _rpcs->queryPrograms(ret);
+    Enum<rfsv::errs> res;
+    processList tmp;
+    if ((res = _rpcs->queryPrograms(tmp)) != rfsv::E_PSI_GEN_NONE) {
+        return res.value;
+    }
+    for (processList::iterator i = tmp.begin(); i != tmp.end(); i++) {
+        // TODO: For some reason the getProcId isn't behaving correctly here so we assemble our own.
+        std::string value = "";
+        value.append(i->getName());
+        value.append(".$");
+        if (i->getPID() < 10) {
+            value.append("0");
+        }
+        value.append(to_string(i->getPID()));
+        printf("Stopping '%s'...\n", value.c_str());
+        res = _rpcs->stopProgram(value.c_str());
+        if (res != rfsv::E_PSI_GEN_NONE) {
+            return res.value;
+        }
+    }
+    return rfsv::errs::E_PSI_GEN_NONE;
 }

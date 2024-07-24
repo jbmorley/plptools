@@ -39,7 +39,7 @@ public:
 
     bool connect(const char * const Peer, int PeerPort);
     rfsv::errs execProgram(const char *program, const char *args);
-    rfsv::errs queryPrograms(processList &ret);
+    rfsv::errs stopPrograms();
 private:
     ppsocket *_socket;
     rpcsfactory *_rpcsfactory;
