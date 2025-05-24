@@ -60,6 +60,11 @@ rfsv::errs RFSVClient::rmdir(const char * const name) {
     return _rfsv->rmdir(name);
 }
 
+rfsv::errs RFSVClient::rename(const char * const oldname, const char * newname) {
+    assert(_rfsv);
+    return _rfsv->rename(oldname, newname);
+}
+
 rfsv::errs RFSVClient::remove(const char * const name) {
     assert(_rfsv);
     return _rfsv->remove(name);

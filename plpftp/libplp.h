@@ -19,6 +19,7 @@ public:
     rfsv::errs mkdir(const char * const name);
     rfsv::errs rmdir(const char * const name);
     rfsv::errs remove(const char * const name);
+    rfsv::errs rename(const char * const oldname, const char * newname);
     rfsv::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
     rfsv::errs copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
     rfsv::errs fgeteattr(const char * const name, PlpDirent &e);
