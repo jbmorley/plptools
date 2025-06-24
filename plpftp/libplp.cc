@@ -50,6 +50,11 @@ rfsv::errs RFSVClient::devinfo(const char drive, PlpDrive &dinfo) {
     return _rfsv->devinfo(drive, dinfo);
 }
 
+rfsv::errs RFSVClient::pathtest(const char * const name, bool &exists) {
+    assert(_rfsv);
+    return _rfsv->pathtest(name, exists);
+}
+
 rfsv::errs RFSVClient::mkdir(const char * const name) {
     assert(_rfsv);
     return _rfsv->mkdir(name);

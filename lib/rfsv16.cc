@@ -690,6 +690,12 @@ copyOnPsion(const char *from, const char *to, void *ptr, cpCallback_t cb)
 }
 
 Enum<rfsv::errs> rfsv16::
+pathtest(const char * const, bool &exists)
+{
+    exists = false;
+}
+
+Enum<rfsv::errs> rfsv16::
 fsetsize(uint32_t handle, uint32_t size)
 {
     bufferStore a;

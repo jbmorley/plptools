@@ -16,6 +16,7 @@ public:
     rfsv::errs dir(const char * const name, PlpDir &ret);
     rfsv::errs devlist(uint32_t &devbits);
     rfsv::errs devinfo(const char drive, PlpDrive &dinfo);
+    rfsv::errs pathtest(const char * const name, bool &exists);
     rfsv::errs mkdir(const char * const name);
     rfsv::errs rmdir(const char * const name);
     rfsv::errs remove(const char * const name);
