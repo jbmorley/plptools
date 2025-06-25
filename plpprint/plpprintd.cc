@@ -269,7 +269,7 @@ ps_bitmap(FILE *f, unsigned long llx, unsigned long lly, unsigned long urx,
     bufferStore out;
     int width, height;
     if (decodeBitmap((const unsigned char *)buf, width, height, out)) {
-        fprintf(f, "%ld %ld %ld %ld %d %d I\n", llx, lly, urx, ury, width, height);
+        fprintf(f, "%lu %lu %lu %lu %d %d I\n", llx, lly, urx, ury, width, height);
         const unsigned char *p = (const unsigned char *)out.getString(0);
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++)
@@ -314,7 +314,7 @@ convertPage(FILE *f, int page, bool last, bufferStore buf)
             "%%EndComments\n"
             "%%BeginProlog\n", f);
         char pbuf[1024];
-        FILE *pf = fopen(PKGDATADIR "/prolog.ps", "r");
+        FILE *pf = fopen(PKGDATADIR PSDICT, "r");
         while (fgets(pbuf, sizeof(pbuf), pf))
             fputs(pbuf, f);
         fclose(pf);
@@ -532,9 +532,9 @@ convertPage(FILE *f, int page, bool last, bufferStore buf)
                 break;
             case 0x0f: {
                 // Pen thickness x, y
-                fprintf(f, "%% @%d: Pen thickness %d %d\n", i, buf.getDWord(i+1),
+                fprintf(f, "%% @%d: Pen thickness %u %u\n", i, buf.getDWord(i+1),
                          buf.getDWord(i+5));
-                fprintf(f, "%d %d TH\n", buf.getDWord(i+1), buf.getDWord(i+5));
+                fprintf(f, "%u %u TH\n", buf.getDWord(i+1), buf.getDWord(i+5));
                 i += 9;
             }
                 break;
@@ -586,17 +586,17 @@ convertPage(FILE *f, int page, bool last, bufferStore buf)
                 break;
             case 0x17: {
                 // ???
-                fprintf(f, "%% @%d: U17 %d %d\n", i, buf.getDWord(i+1),
+                fprintf(f, "%% @%d: U17 %u %u\n", i, buf.getDWord(i+1),
                          buf.getDWord(i+5));
                 i += 9;
             }
                 break;
             case 0x19: {
                 // Draw line
-                fprintf(f, "%% @%d: Line %d %d %d %d\n", i,
+                fprintf(f, "%% @%d: Line %u %u %u %u\n", i,
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
-                fprintf(f, "%d %d %d %d L\n",
+                fprintf(f, "%u %u %u %u L\n",
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
                 i += 17;
@@ -604,17 +604,17 @@ convertPage(FILE *f, int page, bool last, bufferStore buf)
                 break;
             case 0x1b: {
                 // ???
-                fprintf(f, "%% @%d: U1b %d %d\n", i, buf.getDWord(i+1),
+                fprintf(f, "%% @%d: U1b %u %u\n", i, buf.getDWord(i+1),
                          buf.getDWord(i+5));
                 i += 9;
             }
                 break;
             case 0x1f: {
                 // Draw ellipse
-                fprintf(f, "%% @%d: Ellipse %d %d %d %d\n", i,
+                fprintf(f, "%% @%d: Ellipse %u %u %u %u\n", i,
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
-                fprintf(f, "%d %d %d %d E\n",
+                fprintf(f, "%u %u %u %u E\n",
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
                 i += 17;
@@ -622,10 +622,10 @@ convertPage(FILE *f, int page, bool last, bufferStore buf)
                 break;
             case 0x20: {
                 // Draw rectangle
-                fprintf(f, "%% @%d: Rectangle %d %d %d %d\n", i,
+                fprintf(f, "%% @%d: Rectangle %u %u %u %u\n", i,
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
-                fprintf(f, "%d %d %d %d R\n",
+                fprintf(f, "%u %u %u %u R\n",
                         buf.getDWord(i+1), buf.getDWord(i+5),
                         buf.getDWord(i+9), buf.getDWord(i+13));
                 i += 17;
@@ -772,11 +772,11 @@ service_loop()
         bool cancelled = false;
         bool jobEnd;
         unsigned long plen;
-        int pageCount;
+        int pageCount = 0;
         bufferStore buf;
         bufferStore pageBuf;
         int fd;
-        FILE *f;
+        FILE *f = nullptr;
         unsigned char b;
         char *jname =
             (char *)malloc(strlen(spooldir) +
@@ -907,14 +907,14 @@ usage() {
 }
 
 static struct option opts[] = {
-    {"debug",    no_argument,       0, 'd'},
-    {"help",     no_argument,       0, 'h'},
-    {"version",  no_argument,       0, 'V'},
-    {"verbose",  no_argument,       0, 'v'},
-    {"port",     required_argument, 0, 'p'},
-    {"spooldir", required_argument, 0, 's'},
-    {"printcmd", required_argument, 0, 'c'},
-    {NULL,       0,                 0,  0 }
+    {"debug",    no_argument,       nullptr, 'd'},
+    {"help",     no_argument,       nullptr, 'h'},
+    {"version",  no_argument,       nullptr, 'V'},
+    {"verbose",  no_argument,       nullptr, 'v'},
+    {"port",     required_argument, nullptr, 'p'},
+    {"spooldir", required_argument, nullptr, 's'},
+    {"printcmd", required_argument, nullptr, 'c'},
+    {nullptr,    0,                 nullptr,  0 }
 };
 
 static void
@@ -938,7 +938,7 @@ parse_destination(const char *arg, const char **host, int *port)
         // 10.0.0.1
         if (strchr(argcpy, '.') || !isdigit(argcpy[0])) {
             *host = argcpy;
-            pp = 0L;
+            pp = nullptr;
         } else
             pp = argcpy;
     }
@@ -951,14 +951,13 @@ main(int argc, char **argv)
 {
     ppsocket *skt;
     const char *host = "127.0.0.1";
-    int status = 0;
     int sockNum = DPORT;
     int ret = 0;
     int c;
 
     struct servent *se = getservbyname("psion", "tcp");
     endservent();
-    if (se != 0L)
+    if (se != nullptr)
         sockNum = ntohs(se->s_port);
 
     while (1) {
