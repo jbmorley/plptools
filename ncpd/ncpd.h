@@ -18,28 +18,29 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#ifndef _linkchan_h_
-#define _linkchan_h_
+#ifndef _ncpd_h_
+#define _ncpd_h_
 
-#include "channel.h"
-#include "bufferarray.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#define LINKCHAN_DEBUG_LOG  1
-#define LINKCHAN_DEBUG_DUMP 2
+typedef void (*statusCallback_t)(void *, int);
 
-class linkChan : public channel {
-public:
-    linkChan(ncp *ncpController, int ncpChannel = -1);
+int run(int argc, char **argv);
 
-    void ncpDataCallback(bufferStore &a);
-    const char *getNcpRegisterName();
-    void ncpConnectAck();
-    void ncpConnectTerminate();
-    void ncpConnectNak();
-    void ncpRegisterAck() {}
-    void Register(channel *);
-private:
-    int registerSer;
-    bufferArray registerStack;
-};
+int setup_signal_handlers();
+
+int ncpd(int sockNum,
+         int baudRate,
+         const char *host,
+         const char *serialDevice,
+         unsigned short nverbose,
+         statusCallback_t statusCallback,
+         void *context);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

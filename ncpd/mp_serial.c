@@ -107,7 +107,7 @@ init_serial(const char *dev, int speed, int debug)
 	baud = bptr->baud;
     } else
 	baud = 0;
-    
+
     if (debug)
 	printf("using %s...\n", dev);
     euid = geteuid();
@@ -121,9 +121,9 @@ init_serial(const char *dev, int speed, int debug)
 	perror("seteuid");
 	exit(1);
     }
-    if ((fd = open(dev, O_RDWR | O_NOCTTY, 0)) < 0) {
+    if ((fd = open(dev, O_RDWR | O_NOCTTY | O_NONBLOCK, 0)) < 0) {
 	perror(dev);
-	exit(1);
+        return -1;
     }
     if (seteuid(euid)) {
 	perror("seteuid back");
@@ -147,6 +147,9 @@ init_serial(const char *dev, int speed, int debug)
     ti.c_cc[VMIN] = 1;
     ti.c_cc[VTIME] = 0;
 #endif
+
+    ti.c_cflag &= ~CRTSCTS; // Ensure it's disabled explicitly for these platforms
+
     cfsetispeed(&ti, baud);
     cfsetospeed(&ti, baud);
 

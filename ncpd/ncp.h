@@ -22,6 +22,13 @@
 #define _ncp_h_
 
 #include "config.h"
+#include "ncpd.h"
+
+#include "main.h"
+#include "socketchan.h"
+#include "mp_serial.h"
+#include "packet.h"
+#include "link.h"
 
 #include <vector>
 
@@ -52,7 +59,11 @@ private:
 
 class ncp {
 public:
-    ncp(const char *fname, int baud, unsigned short _verbose = 0);
+    ncp(const char *fname,
+        int baud,
+        unsigned short _verbose,
+        statusCallback_t statusCallback,
+        void *_context);
     ~ncp();
 
     int connect(channel *c); // returns channel, or -1 if failure
@@ -109,6 +120,8 @@ private:
     int maxChannels;
     std::vector<PcServer> pcServers;
     int lastSentChannel;
+    statusCallback_t statusCallback;
+    void *context;
 };
 
 #endif

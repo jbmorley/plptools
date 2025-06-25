@@ -613,6 +613,22 @@ copyOnPsion(const char *from, const char *to, void *ptr, cpCallback_t cb)
 }
 
 Enum<rfsv::errs> rfsv32::
+pathtest(const char * const name, bool &exists)
+{
+    bufferStore a;
+    string n = convertSlash(name);
+    a.addWord(n.size());
+    a.addString(n.c_str());
+    if (!sendCommand(PATH_TEST, a))
+        return E_PSI_FILE_DISC;
+    Enum<rfsv::errs> res = getResponse(a);
+    if (res != E_PSI_GEN_NONE)
+        return res;
+    exists = a.getDWord(0) != 0;
+    return res;
+}
+
+Enum<rfsv::errs> rfsv32::
 fsetsize(uint32_t handle, uint32_t size)
 {
     bufferStore a;

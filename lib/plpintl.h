@@ -27,6 +27,8 @@
  */
 #include <locale.h>
 
+#undef ENABLE_NLS
+
 #if defined(ENABLE_NLS)
 #  include <libintl.h>
 #  define _(String) gettext (String)

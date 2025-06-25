@@ -38,6 +38,12 @@ IOWatch::~IOWatch() {
     delete [] io;
 }
 
+void IOWatch::reinit() {
+    num = 0;
+    io = new int [FD_SETSIZE];
+    memset(io, -1, FD_SETSIZE);
+}
+
 void IOWatch::addIO(const int fd) {
     int pos;
     for (pos = 0; pos < num && fd < io[pos]; pos++);

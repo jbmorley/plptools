@@ -22,11 +22,12 @@
 #define _RFSV_H_
 
 #include <deque>
+#include <stdbool.h>
 #include <string>
 
-#include <Enum.h>
-#include <plpdirent.h>
-#include <bufferstore.h>
+#include "Enum.h"
+#include "plpdirent.h"
+#include "bufferstore.h"
 
 typedef std::deque<class PlpDirent> PlpDir;
 
@@ -322,6 +323,8 @@ public:
     * @returns A Psion error code (One of enum @ref #errs ).
     */
     virtual Enum<errs> fgetattr(const char * const name, uint32_t &attr) = 0;
+
+    virtual Enum<errs> pathtest(const char * const name, bool &exists) = 0;
 
     /**
     * Retrieves attributes, size and modification time of a file on the Psion.

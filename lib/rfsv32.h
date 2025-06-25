@@ -22,8 +22,8 @@
 #ifndef _RFSV32_H_
 #define _RFSV32_H_
 
-#include <rfsv.h>
-#include <plpdirent.h>
+#include "rfsv.h"
+#include "plpdirent.h"
 
 class rfsvfactory;
 
@@ -48,6 +48,7 @@ public:
     Enum<rfsv::errs> copyFromPsion(const char *from, int fd, cpCallback_t cb);
     Enum<rfsv::errs> copyToPsion(const char * const, const char * const, void *, cpCallback_t);
     Enum<rfsv::errs> copyOnPsion(const char * const, const char * const, void *, cpCallback_t);
+    Enum<rfsv::errs> pathtest(const char * const, bool &);
     Enum<rfsv::errs> mkdir(const char * const);
     Enum<rfsv::errs> rmdir(const char * const);
     Enum<rfsv::errs> remove(const char * const);

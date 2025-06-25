@@ -22,8 +22,8 @@
 
 #include <iostream>
 
-#include <bufferstore.h>
-#include <bufferarray.h>
+#include "bufferstore.h"
+#include "bufferarray.h"
 
 #include <stdint.h>
 #include <stdlib.h>

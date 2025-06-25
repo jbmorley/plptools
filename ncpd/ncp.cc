@@ -25,9 +25,9 @@
 
 #include <time.h>
 
-#include <bufferstore.h>
-#include <bufferarray.h>
-#include <rfsv.h>
+#include "bufferstore.h"
+#include "bufferarray.h"
+#include "rfsv.h"
 
 #include "ncp.h"
 #include "linkchan.h"
@@ -40,7 +40,11 @@
 
 using namespace std;
 
-ncp::ncp(const char *fname, int baud, unsigned short _verbose)
+ncp::ncp(const char *fname,
+         int baud,
+         unsigned short _verbose,
+         statusCallback_t _statusCallback,
+         void *_context)
 {
     channelPtr = new channel*[MAX_CHANNELS_PSION + 1];
     assert(channelPtr);
@@ -51,6 +55,8 @@ ncp::ncp(const char *fname, int baud, unsigned short _verbose)
 
     failed = false;
     verbose = _verbose;
+    statusCallback = _statusCallback;
+    context = _context;
 
     // until detected on receipt of INFO we use these.
     maxChannels = MAX_CHANNELS_SIBO;
@@ -230,6 +236,7 @@ decodeControlMessage(bufferStore & buff)
 		controlChannel(localChan, NCON_MSG_CONNECT_RESPONSE, b);
 		if (verbose & NCP_DEBUG_LOG)
 		    lout << "ncp: Link UP" << endl;
+                statusCallback(context, 1);
 		linf << _("Connected with a S")
 		     << ((protocolVersion == PV_SERIES_5) ? 5 : 3) << _(" at ")
 		     << getSpeed() << _("baud") << endl;
@@ -348,6 +355,7 @@ decodeControlMessage(bufferStore & buff)
 		lout << " ch=" << (int) buff.getByte(0) << endl;
 	    disconnect(buff.getByte(0));
 	    l->purgeQueue(remoteChan);
+            statusCallback(context, 0);
 	    break;
 
 	case NCON_MSG_DATA_XOFF:
@@ -501,6 +509,7 @@ hasFailed()
     }
     failed |= lfailed;
     if (failed) {
+        statusCallback(context, 0);
 	if (lChan) {
 	    channelPtr[lChan->getNcpChannel()] = NULL;
 	    delete lChan;
