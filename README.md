@@ -67,3 +67,31 @@ The git repository can be cloned with:
 git clone https://github.com/plptools/plptools.git
 
 To make a release you need gh: https://cli.github.com
+
+
+
+## Updating
+
+This is a branch of plptools with custom modifications to make it possible to use it with the Swift package manager. Catching up to upstream currently involves a few fiddly steps. Hopefully these can be reduced in the future as this is slowly unbranched.
+
+First up, configure and build plptools to ensure we generate the required header files:
+```shell
+PATH="$(brew --prefix coreutils)/libexec/gnubin:$(brew --prefix m4)/bin:$PATH" ./bootstrap --skip-po
+CPPFLAGS="-I$(brew --prefix gettext)/include -I$(brew --prefix readline)/include" LDFLAGS="-L$(brew --prefix gettext)/lib -L$(brew --prefix readline)/lib" ./configure
+make
+```
+
+Next, make sure the config file is available to the different components:
+
+```shell
+cp config.h include && cp config.h lib && cp config.h ncpd
+```
+
+Remove some directories that the Swift package manager unhelpfully detects:
+
+```shell
+rm -r ncpd/.deps
+rm -r ncpd/.libs
+```
+
+(It might be possible to generate a custom module map to avoid needing to do this.)
