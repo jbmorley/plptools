@@ -692,9 +692,18 @@ copyOnPsion(const char *from, const char *to, void *ptr, cpCallback_t cb)
 }
 
 Enum<rfsv::errs> rfsv16::
-pathtest(const char * const, bool &exists)
+pathtest(const char * const path, bool &exists)
 {
-    exists = false;
+    string realName = convertSlash(path);
+    bufferStore a;
+    a.addStringT(realName.c_str());
+    sendCommand(SIBO_PATHTEST, a);
+    Enum<rfsv::errs> res = getResponse(a);
+    if (res == 0) {
+        exists = (long)a.getWord(0);
+        return E_PSI_GEN_NONE;
+    }
+    return res;
 }
 
 Enum<rfsv::errs> rfsv16::
