@@ -50,9 +50,9 @@ rfsv::errs RFSVClient::devinfo(const char drive, PlpDrive &dinfo) {
     return _rfsv->devinfo(drive, dinfo);
 }
 
-rfsv::errs RFSVClient::pathtest(const char * const name, bool &exists) {
+rfsv::errs RFSVClient::pathtest(const char * const name) {
     assert(_rfsv);
-    return _rfsv->pathtest(name, exists);
+    return _rfsv->pathtest(name);
 }
 
 rfsv::errs RFSVClient::mkdir(const char * const name) {
@@ -88,6 +88,11 @@ rfsv::errs RFSVClient::copyToPsion(const char *from, const char *to, void *ptr, 
 rfsv::errs RFSVClient::fgeteattr(const char * const name, PlpDirent &e) {
     assert(_rfsv);
     return _rfsv->fgeteattr(name, e);
+}
+
+rfsv::errs RFSVClient::fgetattr(const char * const name, uint32_t &attr) {
+    assert(_rfsv);
+    return _rfsv->fgetattr(name, attr);
 }
 
 const char *plpdirent_get_name(PlpDirent *dirent) {

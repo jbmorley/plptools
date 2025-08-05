@@ -16,7 +16,7 @@ public:
     rfsv::errs dir(const char * const name, PlpDir &ret);
     rfsv::errs devlist(uint32_t &devbits);
     rfsv::errs devinfo(const char drive, PlpDrive &dinfo);
-    rfsv::errs pathtest(const char * const name, bool &exists);
+    rfsv::errs pathtest(const char * const name);
     rfsv::errs mkdir(const char * const name);
     rfsv::errs rmdir(const char * const name);
     rfsv::errs remove(const char * const name);
@@ -24,6 +24,7 @@ public:
     rfsv::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
     rfsv::errs copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
     rfsv::errs fgeteattr(const char * const name, PlpDirent &e);
+    rfsv::errs fgetattr(const char * const name, uint32_t &attr);
 private:
     ppsocket *_socket;
     rfsvfactory *_rfsvfactory;
