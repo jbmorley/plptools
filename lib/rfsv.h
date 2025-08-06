@@ -22,7 +22,6 @@
 #define _RFSV_H_
 
 #include <deque>
-#include <stdbool.h>
 #include <string>
 
 #include "Enum.h"
