@@ -136,6 +136,18 @@ bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     return true;
 }
 
+rfsv::errs RPCSClient::getMachineType(rpcs::machs &machineType) {
+    assert(_rpcs);
+    Enum<rfsv::errs> res;
+    Enum<rpcs::machs> type;
+    res = _rpcs->getMachineType(type);
+    if (res != rfsv::E_PSI_GEN_NONE) {
+        return res;
+    }
+    machineType = type.value;
+    return rfsv::E_PSI_GEN_NONE;
+}
+
 rfsv::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
     assert(_rpcs);
     return _rpcs->getMachineInfo(machineInfo);
