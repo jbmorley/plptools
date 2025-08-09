@@ -136,6 +136,16 @@ bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     return true;
 }
 
+rfsv::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
+    assert(_rpcs);
+    return _rpcs->getMachineInfo(machineInfo);
+}
+
+rfsv::errs RPCSClient::getOwnerInfo(bufferArray &owner) {
+    assert(_rpcs);
+    return _rpcs->getOwnerInfo(owner);
+}
+
 rfsv::errs RPCSClient::execProgram(const char *program, const char *args) {
     assert(_rpcs);
     return _rpcs->execProgram(program, args);
