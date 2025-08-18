@@ -24,8 +24,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define OnePM 3600 // 13:00 offset for SIBO
-
 using namespace std;
 
 PsiTime::PsiTime(void) {
@@ -42,13 +40,13 @@ PsiTime::PsiTime(time_t time) {
 
 PsiTime::PsiTime(psi_timeval *_ptv, psi_timezone *_ptz) {
     if (_ptv != 0L)
-	ptv = *_ptv;
+        ptv = *_ptv;
     if (_ptz != 0L) {
-	ptz = *_ptz;
-	ptzValid = true;
+        ptz = *_ptz;
+        ptzValid = true;
     } else {
-	ptzValid = false;
-	tryPsiZone();
+        ptzValid = false;
+        tryPsiZone();
     }
     /* get our own timezone */
     gettimeofday(&utv, &utz);
@@ -67,9 +65,9 @@ PsiTime::PsiTime(const uint32_t _ptvHi, const uint32_t _ptvLo) {
 
 PsiTime::PsiTime(struct timeval *_utv, struct timezone *_utz) {
     if (_utv != 0L)
-	utv = *_utv;
+        utv = *_utv;
     if (_utz != 0L)
-	utz = *_utz;
+        utz = *_utz;
     tryPsiZone();
     unix2psi();
 }
@@ -89,7 +87,7 @@ PsiTime::~PsiTime() {
 
 void PsiTime::setUnixTime(struct timeval *_utv) {
     if (_utv != 0L)
-	utv = *_utv;
+        utv = *_utv;
     unix2psi();
 }
 
@@ -107,7 +105,7 @@ void PsiTime::setUnixNow(void) {
 
 void PsiTime::setPsiTime(psi_timeval *_ptv) {
     if (_ptv != 0L)
-	ptv = *_ptv;
+        ptv = *_ptv;
     psi2unix();
 }
 
@@ -119,8 +117,8 @@ void PsiTime::setPsiTime(const uint32_t _ptvHi, const uint32_t _ptvLo) {
 
 void PsiTime::setPsiZone(psi_timezone *_ptz) {
     if (_ptz != 0L) {
-	ptz = *_ptz;
-	ptzValid = true;
+        ptz = *_ptz;
+        ptzValid = true;
     }
     psi2unix();
 }
@@ -164,97 +162,97 @@ bool PsiTime::operator==(const PsiTime &t) {
 bool PsiTime::operator<(const PsiTime &t) {
     psi2unix();
     if (utv.tv_sec == t.utv.tv_sec)
-	return (utv.tv_usec < t.utv.tv_usec);
+        return (utv.tv_usec < t.utv.tv_usec);
     else
-	return (utv.tv_sec < t.utv.tv_sec);
+        return (utv.tv_sec < t.utv.tv_sec);
 }
 
 bool PsiTime::operator>(const PsiTime &t) {
     psi2unix();
     if (utv.tv_sec == t.utv.tv_sec)
-	return (utv.tv_usec > t.utv.tv_usec);
+        return (utv.tv_usec > t.utv.tv_usec);
     else
-	return (utv.tv_sec > t.utv.tv_sec);
+        return (utv.tv_sec > t.utv.tv_sec);
 }
 
 ostream &operator<<(ostream &s, const PsiTime &t) {
     const char *fmt = "%c";
     char buf[100];
+    // Local time zone and DST offsets are added by localtime()
     strftime(buf, sizeof(buf), fmt, localtime(&t.utv.tv_sec));
     s << buf;
     return s;
 }
 
 /**
- * The difference between
- * EPOC epoch (01.01.0001 00:00:00)
- * and Unix epoch (01.01.1970 00:00:00)
- * in microseconds.
+ * The difference between EPOC epoch (01.01.0000 00:00:00)
+ * and Unix epoch (01.01.1970 00:00:00) in microseconds.
+ * This constant is part of EPOC's standard library (Estlib.dll).
  */
 #define EPOCH_DIFF 0x00dcddb30f2f8000ULL
 
 /* evalOffset()
- * Returns the difference between the Psion's timezone and the PC's timezone, in
- * microseconds
+ * Returns the difference between a local time from the Psion and the UTC
+ * time of the local machine, in microseconds.
  */
-static long long evalOffset(psi_timezone ptz, time_t time, bool valid) {
-  int64_t offset = 0;
-  bool flg = false;
+static long long evalOffset(psi_timezone ptz, time_t ptime, bool valid) {
+    int64_t offset = 0;
 
-  if (valid) {
-    offset = ptz.utc_offset;
-    flg = true;
-  } else {
-    /**
-     * Fallback. If no Psion zone given, use
-     * environment variable PSI_TZ
-     */
-    const char *offstr = getenv("PSI_TZ");
-    if (offstr != 0) {
-      char *err = 0;
-      offset = strtol(offstr, &err, 0);
-      if (err != 0 && *err != '\0') {
-        offset = 0;
-      }
-    } else {
-      flg = true;
+    // Get the difference between Psion's and local machine's current offsets.
+    if (valid) { // EPOC32 only, once getMachineInfo() has been called
+        offset = ptz.utc_offset; // timezone offset (without DST offset)
+        offset += ptz.dst_zones & PsiTime::PSI_TZ_HOME ? 3600 : 0; // DST
+        time_t now = time(NULL);
+        offset -= localtime(&now)->tm_gmtoff; // timezone + DST offsets
+    } else { // Fallback. Use PSI_TZ environment variable (e.g. "-3600").
+        const char *offstr = getenv("PSI_TZ");
+        if (offstr != 0) {
+            char *err = 0;
+            offset = strtol(offstr, &err, 10);
+            if (*err != '\0') {
+                offset = 0;
+            }
+        }
     }
-  }
+    // Fallback. Assume that both Psion and local machine have the same
+    // timezone and DST settings. Offset is still be 0 at this point.
 
-  // If all else fails, we assume that PC Timezone == Psion Timezone;
-  // offset should still be 0 at this point.
+    // Substract local timezone and DST offsets to match local machine's UTC
+    // time, they get added later by localtime() when timestamp is displayed.
+    offset += localtime(&ptime)->tm_gmtoff;
+    offset *= 1000000;
 
-  if (flg) {
-    struct tm *tm = localtime(&time);
-    offset -= tm->tm_gmtoff; // Subtract out local timezone
-    offset += 3600 * tm->tm_isdst * 2;
-    offset *= 1000000;       // Turn it into microseconds
-  }
-
-  return offset;
+    return offset;
 }
 
+/* setSiboTime()
+ * Store SIBO 'local' time as Unix UTC time.
+ */
 void PsiTime::setSiboTime(uint32_t stime) {
-    long long micro = evalOffset(ptz, time(0), false);
+    long long micro = evalOffset(ptz, stime, false);
 
-    micro /= 1000000;
-    utv.tv_sec = stime + OnePM + micro;
+    utv.tv_sec = stime - micro/1000000;
     utv.tv_usec = 0;
-//    unix2psi();
 }
 
+/* getSiboTime()
+ * Get stored Unix UTC time as SIBO 'local' time.
+ */
 uint32_t PsiTime::getSiboTime(void) {
-    long long micro = evalOffset(ptz, time(0), false);
+    long long micro = evalOffset(ptz, utv.tv_sec, false);
 
-    micro /= 1000000;
-    return utv.tv_sec - OnePM - micro;
+    return utv.tv_sec + micro/1000000;
 }
 
-void PsiTime::psi2unix(void) {
+/* psi2unix()
+ * Convert EPOC local time to Unix UTC time.
+ */
+void PsiTime::psi2unix(void) { // epoc2unix
+
     uint64_t micro = ptv.tv_high;
     micro = (micro << 32) | ptv.tv_low;
 
-    /* Substract Psion's idea of UTC offset */
+    /* Substract EPOC's idea of UTC offset */
     micro -= EPOCH_DIFF;
     micro -= evalOffset(ptz, micro / 1000000, ptzValid);
 
@@ -262,10 +260,14 @@ void PsiTime::psi2unix(void) {
     utv.tv_usec = micro % 1000000;
 }
 
-void PsiTime::unix2psi(void) {
+/* unix2psi()
+ * Convert Unix UTC time to EPOC local time.
+ */
+void PsiTime::unix2psi(void) { // unix2epoc
+
     uint64_t micro = (uint64_t)utv.tv_sec * 1000000ULL + utv.tv_usec;
 
-    /* Add Psion's idea of UTC offset */
+    /* Add EPOC's idea of UTC offset */
     micro += evalOffset(ptz, utv.tv_sec, ptzValid);
     micro += EPOCH_DIFF;
 
@@ -275,17 +277,16 @@ void PsiTime::unix2psi(void) {
 
 void PsiTime::tryPsiZone() {
     if (ptzValid)
-	return;
+        return;
     if (PsiZone::getInstance().getZone(ptz))
-	ptzValid = true;
+        ptzValid = true;
 }
 
 PsiZone *PsiZone::_instance = 0L;
 
-PsiZone &PsiZone::
-getInstance() {
+PsiZone &PsiZone::getInstance() {
     if (_instance == 0L)
-	_instance = new PsiZone();
+        _instance = new PsiZone();
     return *_instance;
 }
 
@@ -293,15 +294,13 @@ PsiZone::PsiZone() {
     _ptzValid = false;
 }
 
-void PsiZone::
-setZone(psi_timezone &ptz) {
+void PsiZone::setZone(psi_timezone &ptz) {
     _ptz = ptz;
     _ptzValid = true;
 }
 
-bool PsiZone::
-getZone(psi_timezone &ptz) {
+bool PsiZone::getZone(psi_timezone &ptz) {
     if (_ptzValid)
-	ptz = _ptz;
+        ptz = _ptz;
     return _ptzValid;
 }
