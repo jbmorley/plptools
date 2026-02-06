@@ -66,8 +66,7 @@ public:
     * @param secs Number of seconds to wait.
     * @param usecs Number of microseconds to wait.
     *
-    * @return true, if any of the descriptors is
-    * 	readable.
+    * @return true, if any of the descriptors is readable.
     */
     bool watch(const long secs, const long usecs);
 

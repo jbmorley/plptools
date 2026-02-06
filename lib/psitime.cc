@@ -156,7 +156,7 @@ PsiTime &PsiTime::operator=(const PsiTime &t) {
 bool PsiTime::operator==(const PsiTime &t) {
     psi2unix();
     return ((utv.tv_sec == t.utv.tv_sec) &&
-	    (utv.tv_usec == t.utv.tv_usec));
+            (utv.tv_usec == t.utv.tv_usec));
 }
 
 bool PsiTime::operator<(const PsiTime &t) {
