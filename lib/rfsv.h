@@ -59,6 +59,12 @@ private:
     bufferStore b;
 };
 
+#if defined(__clang__) && defined(__apple_build_version__) && __apple_build_version__ >= 16000026  // Xcode 16.0
+#define APPLE_CLOSED_ENUM __attribute__((enum_extensibility(closed)))
+#else
+#define APPLE_CLOSED_ENUM
+#endif
+
 /**
  * Access remote file services of a Psion.
  *
@@ -185,7 +191,7 @@ public:
         E_PSI_NOT_SIBO = -200,
         // Special error code for "internal library error"
         E_PSI_INTERNAL = -201
-    };
+    } APPLE_CLOSED_ENUM;
 
     /**
     * The known file attributes

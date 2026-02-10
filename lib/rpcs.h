@@ -66,7 +66,7 @@ public:
         PSI_MACH_S5 = 32,
         PSI_MACH_WINC = 33
         // TODO: Code for 5mx
-    };
+    } APPLE_CLOSED_ENUM;
 
     /**
     * The known interface languages.
