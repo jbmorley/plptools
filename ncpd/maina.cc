@@ -58,7 +58,7 @@ using namespace std;
 
 // TODO: Remove this global state.
 static bool verbose = false;
-static volatile sig_atomic_t active = true;
+//static volatile sig_atomic_t active = true;
 static bool autoexit = false;
 
 struct ncp_state {
@@ -95,10 +95,21 @@ ostream lout(&dlog);
 ostream lerr(&elog);
 
 static bool is_shutdown(int shutdown_fd) {
-    return !active;
+////    return !active;
+//    linf << _("+ is_shutdown") << endl;
+//    if (shutdown_fd == -1) return false;
+//    char b;
+//    int result = recv(shutdown_fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 1;
+//    linf << _("- is_shutdown = ") << result << endl;
+//    return result;
+
+
     if (shutdown_fd == -1) return false;
-    char b;
-    return recv(shutdown_fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 1;
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(shutdown_fd, &fds);
+    struct timeval t = {0, 0};
+    return select(shutdown_fd + 1, &fds, NULL, NULL, &t) > 0;
 }
 
 static void
@@ -106,7 +117,7 @@ term_handler(int)
 {
     linf << _("Got SIGTERM") << endl;
     signal(SIGTERM, term_handler);
-    active = false;
+//    active = false;
 };
 
 static void
@@ -114,7 +125,7 @@ int_handler(int)
 {
     linf << _("Got SIGINT") << endl;
     signal(SIGINT, int_handler);
-    active = false;
+//    active = false;
 };
 
 void
@@ -263,10 +274,11 @@ link_thread(void *arg)
         // psion
         state->iow.watch(1, 0, state->shutdown_pipe[0]);
         if (state->theNCP->hasFailed()) {
-            if (autoexit) {
-                active = false;
-                break;
-            }
+            // TODO: CANCEL HERE!
+//            if (autoexit) {
+//                active = false;
+//                break;
+//            }
             state->iow.watch(5, 0, state->shutdown_pipe[0]);
             if (verbose)
                 lout << "ncp: restarting\n";
@@ -335,7 +347,7 @@ int ncp_stop(ncp_state *state) {
 
     char b = 0;
     write(state->shutdown_pipe[1], &b, 1);
-    pthread_kill(state->threadId, SIGINT);
+    pthread_kill(state->threadId, SIGINT);  // TODO: In an ideal world this isn't necessary.
     pthread_join(state->threadId, 0);
     close(state->shutdown_pipe[0]);
     close(state->shutdown_pipe[1]);
@@ -355,7 +367,7 @@ int ncpd(int sockNum,
 {
 
     state->numScp = 0;
-    active = true;
+//    active = true;
     verbose = true;
     state->accept_iow.reinit();
     signal(SIGTERM, term_handler);
