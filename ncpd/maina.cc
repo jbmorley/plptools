@@ -95,15 +95,6 @@ ostream lout(&dlog);
 ostream lerr(&elog);
 
 static bool is_shutdown(int shutdown_fd) {
-////    return !active;
-//    linf << _("+ is_shutdown") << endl;
-//    if (shutdown_fd == -1) return false;
-//    char b;
-//    int result = recv(shutdown_fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 1;
-//    linf << _("- is_shutdown = ") << result << endl;
-//    return result;
-
-
     if (shutdown_fd == -1) return false;
     fd_set fds;
     FD_ZERO(&fds);
