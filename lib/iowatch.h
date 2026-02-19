@@ -68,7 +68,7 @@ public:
     *
     * @return true, if any of the descriptors is readable.
     */
-    bool watch(const long secs, const long usecs);
+    bool watch(const long secs, const long usecs, const int shutdown_fd);
 
 private:
     int num;

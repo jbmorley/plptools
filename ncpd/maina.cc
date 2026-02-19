@@ -56,18 +56,34 @@
 
 using namespace std;
 
-// TODO: Move this into ncp_state, or, if possible, don't have it be global at all.
+// TODO: Remove this global state.
 static bool verbose = false;
-static bool active = true;
+static volatile sig_atomic_t active = true;
 static bool autoexit = false;
 
 struct ncp_state {
-    ncp *theNCP = NULL;
+
+    // Parameters.
+    int sockNum = 0;
+    int baudRate = 0;
+    string host;
+    string serialDevice;
+    unsigned short nverbose = 0;
+    statusCallback_t statusCallback = nullptr;
+    void *context = nullptr;
+
+    // State.
+
+    pthread_t threadId = 0;
+    ncp *theNCP = nullptr;
     IOWatch iow;
     IOWatch accept_iow;
     ppsocket skt;
     int numScp = 0;
-    socketChan *scp[257]; // MAX_CHANNELS_PSION + 1
+    socketChan *scp[257] = {}; // MAX_CHANNELS_PSION + 1
+
+    // We use this to signal a shutdown request.
+    int shutdown_pipe[2] = { -1, -1 };
 };
 
 
@@ -77,6 +93,13 @@ logbuf elog(LOG_ERR, STDERR_FILENO);
 ostream linf(&ilog);
 ostream lout(&dlog);
 ostream lerr(&elog);
+
+static bool is_shutdown(int shutdown_fd) {
+    return !active;
+    if (shutdown_fd == -1) return false;
+    char b;
+    return recv(shutdown_fd, &b, 1, MSG_PEEK | MSG_DONTWAIT) == 1;
+}
 
 static void
 term_handler(int)
@@ -98,7 +121,7 @@ void
 checkForNewSocketConnection(ncp_state *state)
 {
     string peer;
-    if (state->accept_iow.watch(5,0) <= 0) {
+    if (state->accept_iow.watch(5, 0, state->shutdown_pipe[0]) <= 0) {
         return;
     }
     ppsocket *next = state->skt.accept(&peer, &state->iow);
@@ -129,8 +152,8 @@ void *
 pollSocketConnections(void *arg)
 {
     ncp_state *state = (ncp_state *)arg;
-    while (active) {
-        state->iow.watch(0, 10000);
+    while (!is_shutdown(state->shutdown_pipe[0])) {
+        state->iow.watch(0, 10000, state->shutdown_pipe[0]);
         for (int i = 0; i < state->numScp; i++) {
             state->scp[i]->socketPoll();
             if (state->scp[i]->terminate()) {
@@ -236,15 +259,15 @@ static void *
 link_thread(void *arg)
 {
     ncp_state *state = (ncp_state *)arg;
-    while (active) {
+    while (!is_shutdown(state->shutdown_pipe[0])) {
         // psion
-        state->iow.watch(1, 0);
+        state->iow.watch(1, 0, state->shutdown_pipe[0]);
         if (state->theNCP->hasFailed()) {
             if (autoexit) {
                 active = false;
                 break;
             }
-            state->iow.watch(5, 0);
+            state->iow.watch(5, 0, state->shutdown_pipe[0]);
             if (verbose)
                 lout << "ncp: restarting\n";
             state->theNCP->reset();
@@ -258,24 +281,87 @@ int setup_signal_handlers() {
     signal(SIGINT, int_handler);
 }
 
+ncp_state *ncp_init() {
+    ncp_state *state = new ncp_state();
+    if (pipe(state->shutdown_pipe) != 0) {
+        delete state;
+        return nullptr;
+    }
+    return state;
+}
+
+static void *ncp_thread(void *arg) {
+    ncp_state *state = (ncp_state *)arg;
+
+    // Run ncpd until it's cancelled.
+    ncpd(state->sockNum,
+         state->baudRate,
+         state->host.c_str(),
+         state->serialDevice.c_str(),
+         state->nverbose,
+         state->statusCallback,
+         state->context,
+         state);
+
+    // Belt and braces notification to say we've stopped.
+    state->statusCallback(state->context, 0);
+
+    return NULL;
+}
+
+int ncp_start(int sockNum,
+              int baudRate,
+              const char *host,
+              const char *serialDevice,
+              unsigned short nverbose,
+              statusCallback_t statusCallback,
+              void *context,
+              ncp_state *state) {
+
+    setup_signal_handlers();
+
+    state->sockNum = sockNum;
+    state->baudRate = baudRate;
+    state->host = string(host);
+    state->serialDevice = string(serialDevice);
+    state->nverbose = nverbose;
+    state->statusCallback = statusCallback;
+    state->context = context;
+
+    return pthread_create(&state->threadId, NULL, ncp_thread, state);
+}
+
+int ncp_stop(ncp_state *state) {
+
+    char b = 0;
+    write(state->shutdown_pipe[1], &b, 1);
+    pthread_kill(state->threadId, SIGINT);
+    pthread_join(state->threadId, 0);
+    close(state->shutdown_pipe[0]);
+    close(state->shutdown_pipe[1]);
+    state->shutdown_pipe[0] = state->shutdown_pipe[1] = -1;
+    delete state;
+    return 0;
+}
+
 int ncpd(int sockNum,
          int baudRate,
          const char *host,
          const char *serialDevice,
          unsigned short nverbose,
          statusCallback_t statusCallback,
-         void *context)
+         void *context,
+         ncp_state *state)
 {
-    ncp_state state = ncp_state();
 
-    state.numScp = 0;
+    state->numScp = 0;
     active = true;
     verbose = true;
-    state.accept_iow.reinit();
+    state->accept_iow.reinit();
     signal(SIGTERM, term_handler);
     signal(SIGINT, int_handler);
-    state.skt.setWatch(&state.accept_iow);
-    if (!state.skt.listen(host, sockNum))
+    state->skt.setWatch(&state->accept_iow);
+    if (!state->skt.listen(host, sockNum))
         cerr << "listen on " << host << ":" << sockNum << ": "
         << strerror(errno) << endl;
     else {
@@ -300,34 +386,34 @@ int ncpd(int sockNum,
 //            }
 //        }
 
-        memset(state.scp, 0, sizeof(state.scp));
-        state.theNCP = new ncp(serialDevice, baudRate, nverbose, statusCallback, context);
-        if (!state.theNCP) {
+        memset(state->scp, 0, sizeof(state->scp));
+        state->theNCP = new ncp(serialDevice, baudRate, nverbose, statusCallback, context);
+        if (!state->theNCP) {
             lerr << "Could not create NCP object" << endl;
             exit(-1);
         }
         pthread_t thr_a, thr_b;
-        if (pthread_create(&thr_a, NULL, link_thread, &state) != 0) {
+        if (pthread_create(&thr_a, NULL, link_thread, state) != 0) {
             lerr << "Could not create Link thread" << endl;
             exit(-1);
         }
-        if (pthread_create(&thr_b, NULL, pollSocketConnections, &state) != 0) {
+        if (pthread_create(&thr_b, NULL, pollSocketConnections, state) != 0) {
             lerr << "Could not create Socket thread" << endl;
             exit(-1);
         }
-        while (active)
-            checkForNewSocketConnection(&state);
+        while (!is_shutdown(state->shutdown_pipe[0]))
+            checkForNewSocketConnection(state);
         linf << _("terminating") << endl;
         void *ret;
         pthread_join(thr_a, &ret);
         linf << _("joined Link thread") << endl;
         pthread_join(thr_b, &ret);
         linf << _("joined Socket thread") << endl;
-        delete state.theNCP;
-        state.theNCP = nullptr;
+        delete state->theNCP;
+        state->theNCP = nullptr;
         linf << _("shut down NCP") << endl;
     }
-    state.skt.closeSocket();
+    state->skt.closeSocket();
     linf << _("socket closed") << endl;
     return 0;
 }
@@ -424,7 +510,7 @@ run(int argc, char **argv)
         pid = 0;
     switch (pid) {
         case 0:
-            exit(ncpd(sockNum, baudRate, host, serialDevice, nverbose, 0, 0));
+            exit(ncpd(sockNum, baudRate, host, serialDevice, nverbose, 0, 0, 0));
             break;
         case -1:
             lerr << "fork: " << strerror(errno) << endl;
