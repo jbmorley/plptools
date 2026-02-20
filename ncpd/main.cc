@@ -20,6 +20,7 @@
  *
  */
 #include "config.h"
+#include "main.h"
 
 #include <string>
 #include <cstring>
@@ -54,17 +55,35 @@
 
 using namespace std;
 
-static bool verbose = false;
-static bool active = true;
-static bool autoexit = false;
+/**
+ * Configuration and state associated with an NCP session.
+ *
+ * This is shared between the different threads used to run the session and replaces historical global state. Care needs
+ * to be taking when writing to this as the datatypes used are not inherently thread-safe.
+ */
+struct ncp_session {
 
-static ncp *theNCP = NULL;
-static IOWatch iow;
-static IOWatch accept_iow;
-static ppsocket skt;
-static int numScp = 0;
-static socketChan *scp[257]; // MAX_CHANNELS_PSION + 1
+    // Configuration.
+    int sockNum = 0;
+    int baudRate = 0;
+    string host;
+    string serialDevice;
+    bool autoexit = false;
+    unsigned short nverbose = 0;
 
+    // State.
+    ncp *theNCP = nullptr;
+    IOWatch iow;
+    IOWatch accept_iow;
+    ppsocket skt;
+    int numScp = 0;
+    socketChan *scp[257] = {}; // MAX_CHANNELS_PSION + 1
+    volatile sig_atomic_t is_cancelled = false;
+};
+
+// Global session state specific to the `ncpd` process. This exists as a global solely for the purpose of accessing it
+// from the interrupt handlers.
+static ncp_session *shared_session;
 
 logbuf ilog(LOG_INFO, STDOUT_FILENO);
 logbuf dlog(LOG_DEBUG, STDOUT_FILENO);
@@ -78,7 +97,7 @@ term_handler(int)
 {
     linf << _("Got SIGTERM") << endl;
     signal(SIGTERM, term_handler);
-    active = false;
+    shared_session->is_cancelled = true;
 };
 
 static void
@@ -86,23 +105,23 @@ int_handler(int)
 {
     linf << _("Got SIGINT") << endl;
     signal(SIGINT, int_handler);
-    active = false;
+    shared_session->is_cancelled = true;
 };
 
 void
-checkForNewSocketConnection()
+checkForNewSocketConnection(ncp_session *session)
 {
     string peer;
-    if (accept_iow.watch(5,0) <= 0) {
+    if (session->accept_iow.watch(5,0) <= 0) {
         return;
     }
-    ppsocket *next = skt.accept(&peer, &iow);
+    ppsocket *next = session->skt.accept(&peer, &session->iow);
     if (next != NULL) {
-        next->setWatch(&iow);
+        next->setWatch(&session->iow);
         // New connect
-        if (verbose)
+        if (session->nverbose & NCP_SESSION_LOG)
             lout << "New socket connection from " << peer << endl;
-        if ((numScp >= theNCP->maxLinks()) || (!theNCP->gotLinkChannel())) {
+        if ((session->numScp >= session->theNCP->maxLinks()) || (!session->theNCP->gotLinkChannel())) {
             bufferStore a;
 
             // Give the client time to send its version request.
@@ -113,26 +132,27 @@ checkForNewSocketConnection()
             a.addStringT("No Psion Connected\n");
             next->sendBufferStore(a);
             delete next;
-            if (verbose)
+            if (session->nverbose & NCP_SESSION_LOG)
                 lout << "rejected" << endl;
         } else
-            scp[numScp++] = new socketChan(next, theNCP);
+            session->scp[session->numScp++] = new socketChan(next, session->theNCP);
     }
 }
 
 void *
-pollSocketConnections(void *)
+pollSocketConnections(void *arg)
 {
-    while (active) {
-        iow.watch(0, 10000);
-        for (int i = 0; i < numScp; i++) {
-            scp[i]->socketPoll();
-            if (scp[i]->terminate()) {
+    ncp_session *session = (ncp_session *)arg;
+    while (!session->is_cancelled) {
+        session->iow.watch(0, 10000);
+        for (int i = 0; i < session->numScp; i++) {
+            session->scp[i]->socketPoll();
+            if (session->scp[i]->terminate()) {
                 // Requested channel termination
-                delete scp[i];
-                numScp--;
-                for (int j = i; j < numScp; j++)
-                    scp[j] = scp[j + 1];
+                delete session->scp[i];
+                session->numScp--;
+                for (int j = i; j < session->numScp; j++)
+                    session->scp[j] = session->scp[j + 1];
                 i--;
             }
         }
@@ -229,18 +249,19 @@ parse_destination(const char *arg, const char **host, int *port)
 static void *
 link_thread(void *arg)
 {
-    while (active) {
+    ncp_session *session = (ncp_session *)arg;
+    while (!session->is_cancelled) {
         // psion
-        iow.watch(1, 0);
-        if (theNCP->hasFailed()) {
-            if (autoexit) {
-                active = false;
+        session->iow.watch(1, 0);
+        if (session->theNCP->hasFailed()) {
+            if (session->autoexit) {
+                session->is_cancelled = true;
                 break;
             }
-            iow.watch(5, 0);
-            if (verbose)
+            session->iow.watch(5, 0);
+            if (session->nverbose & NCP_SESSION_LOG)
                 lout << "ncp: restarting\n";
-            theNCP->reset();
+            session->theNCP->reset();
         }
     }
     return NULL;
@@ -254,47 +275,42 @@ link_thread(void *arg)
  * the various `select` calls to interrupt and, in the current implementation, this will check the global `active`
  * boolean to determine if it should keep running.
  */
-void run_ncp_session(int sockNum,
-                     int baudRate,
-                     const char *host,
-                     const char *serialDevice,
-                     unsigned short nverbose) {
+void run_ncp_session(ncp_session *session) {
 
-    skt.setWatch(&accept_iow);
-    if (!skt.listen(host, sockNum)) {
-        cerr << "listen on " << host << ":" << sockNum << ": " << strerror(errno) << endl;
+    session->skt.setWatch(&session->accept_iow);
+    if (!session->skt.listen(session->host.c_str(), session->sockNum)) {
+        cerr << "listen on " << session->host << ":" << session->sockNum << ": " << strerror(errno) << endl;
         return;
     }
-    linf << _("Listening at ") << host << ":" << sockNum << _(" using device ") << serialDevice << endl;
+    linf
+        << _("Listening at ") << session->host << ":" << session->sockNum
+        << _(" using device ") << session->serialDevice << endl;
 
-    memset(scp, 0, sizeof(scp));
-    theNCP = new ncp(serialDevice, baudRate, nverbose);
-    if (!theNCP) {
-        lerr << "Could not create NCP object" << endl;
-        exit(-1);
-    }
+    session->theNCP = new ncp(session->serialDevice.c_str(), session->baudRate, session->nverbose);
+
     pthread_t thr_a, thr_b;
-    if (pthread_create(&thr_a, NULL, link_thread, NULL) != 0) {
+    if (pthread_create(&thr_a, NULL, link_thread, session) != 0) {
         lerr << "Could not create Link thread" << endl;
         exit(-1);
     }
-    if (pthread_create(&thr_b, NULL,
-                    pollSocketConnections, NULL) != 0) {
+    if (pthread_create(&thr_b, NULL, pollSocketConnections, session) != 0) {
         lerr << "Could not create Socket thread" << endl;
         exit(-1);
     }
-    while (active)
-        checkForNewSocketConnection();
+    while (!session->is_cancelled)
+        checkForNewSocketConnection(session);
     linf << _("terminating") << endl;
     void *ret;
     pthread_join(thr_a, &ret);
     linf << _("joined Link thread") << endl;
     pthread_join(thr_b, &ret);
     linf << _("joined Socket thread") << endl;
-    delete theNCP;
+    delete session->theNCP;
     linf << _("shut down NCP") << endl;
-    skt.closeSocket();
+    session->skt.closeSocket();
     linf << _("socket closed") << endl;
+
+    delete session;
 }
 
 int
@@ -308,6 +324,7 @@ main(int argc, char **argv)
     const char *host = "127.0.0.1";
     const char *serialDevice = NULL;
     unsigned short nverbose = 0;
+    bool autoexit = false;
 
     struct servent *se = getservbyname("psion", "tcp");
     dlog.setOn(false);
@@ -346,12 +363,12 @@ main(int argc, char **argv)
                 if (!strcmp(optarg, "ph"))
                     nverbose |= PKT_DEBUG_HANDSHAKE;
                 if (!strcmp(optarg, "m"))
-                    verbose = true;
+                    nverbose |= NCP_SESSION_LOG;
                 if (!strcmp(optarg, "all")) {
                     nverbose = NCP_DEBUG_LOG | NCP_DEBUG_DUMP |
                         LNK_DEBUG_LOG | LNK_DEBUG_DUMP |
-                        PKT_DEBUG_LOG | PKT_DEBUG_DUMP | PKT_DEBUG_HANDSHAKE;
-                    verbose = true;
+                        PKT_DEBUG_LOG | PKT_DEBUG_DUMP | PKT_DEBUG_HANDSHAKE |
+                        NCP_SESSION_LOG;
                 }
                 break;
             case 'd':
@@ -388,6 +405,7 @@ main(int argc, char **argv)
         pid = 0;
     switch (pid) {
         case 0:
+            {
             signal(SIGTERM, term_handler);
             signal(SIGINT, int_handler);
 
@@ -410,10 +428,19 @@ main(int argc, char **argv)
                 }
             }
 
-            // Once our process is fully configured, we can start the session.
-            run_ncp_session(sockNum, baudRate, host, serialDevice, nverbose);
+            // Once our process is fully set up, we can create and start the session.
+            shared_session = new ncp_session();
+            shared_session->sockNum = sockNum;
+            shared_session->baudRate = baudRate;
+            shared_session->host = host;
+            shared_session->serialDevice = serialDevice;
+            shared_session->nverbose = nverbose;
+            shared_session->autoexit = autoexit;
+            run_ncp_session(shared_session);
+            delete shared_session;
 
             break;
+            }
         case -1:
             lerr << "fork: " << strerror(errno) << endl;
             break;
