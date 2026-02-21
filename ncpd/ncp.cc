@@ -40,7 +40,7 @@
 
 using namespace std;
 
-ncp::ncp(const char *fname, int baud, unsigned short _verbose)
+ncp::ncp(const char *fname, int baud, unsigned short _verbose, const int cancellationFd)
 {
     channelPtr = new channel*[MAX_CHANNELS_PSION + 1];
     messageList = new bufferStore[MAX_CHANNELS_PSION + 1];
@@ -58,7 +58,7 @@ ncp::ncp(const char *fname, int baud, unsigned short _verbose)
     for (int i = 0; i < MAX_CHANNELS_PSION; i++)
         channelPtr[i] = NULL;
 
-    l = new Link(fname, baud, this, verbose);
+    l = new Link(fname, baud, this, verbose, cancellationFd);
 }
 
 ncp::~ncp()

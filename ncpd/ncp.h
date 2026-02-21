@@ -49,7 +49,7 @@ private:
 
 class ncp {
 public:
-    ncp(const char *fname, int baud, unsigned short _verbose = 0);
+    ncp(const char *fname, int baud, unsigned short verbose, const int cancellationFd);
     ~ncp();
 
     int connect(channel *c); // returns channel, or -1 if failure
