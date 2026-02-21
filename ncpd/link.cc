@@ -56,7 +56,7 @@ ENUM_DEFINITION_BEGIN(Link::link_type, Link::LINK_TYPE_UNKNOWN)
     stringRep.add(Link::LINK_TYPE_EPOC,    N_("EPOC"));
 ENUM_DEFINITION_END(Link::link_type)
 
-Link::Link(const char *fname, int baud, ncp *_ncp, unsigned short _verbose, const int cancellationFd)
+Link::Link(const char *fname, int baud, NCP *_ncp, unsigned short _verbose, const int cancellationFd)
     : p(0)
 {
     theNCP = _ncp;

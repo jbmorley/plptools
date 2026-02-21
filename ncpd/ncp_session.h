@@ -89,7 +89,7 @@ public:
 
     // State.
     pthread_t threadId_ = 0;
-    ncp *ncp = nullptr;
+    NCP *ncp = nullptr;
     IOWatch iow;
     IOWatch acceptIOW;
     ppsocket skt;

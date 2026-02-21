@@ -117,7 +117,10 @@ void *runNCPSession(void *arg) {
         << _("Listening at ") << session->host << ":" << session->sockNum
         << _(" using device ") << session->serialDevice << endl;
 
-    session->ncp = new ncp(session->serialDevice.c_str(), session->baudRate, session->nverbose, session->cancellationPipe[0]);
+    session->ncp = new NCP(session->serialDevice.c_str(),
+                           session->baudRate,
+                           session->nverbose,
+                           session->cancellationPipe[0]);
     pthread_t thr_a, thr_b;
     if (pthread_create(&thr_a, NULL, linkThread, session) != 0) {
         lerr << "Could not create Link thread" << endl;
