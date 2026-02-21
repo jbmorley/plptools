@@ -4,6 +4,7 @@
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999-2002 Fritz Elfert <felfert@to.com>
  *  Copyright (C) 2006-2025 Reuben Thomas <rrt@sc3d.org>
+ *  Copyright (C) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,14 +23,15 @@
 
 #include "config.h"
 
-#include <rfsv.h>
-#include <rpcs.h>
-#include <rclip.h>
-#include <plpintl.h>
-#include <ppsocket.h>
 #include <bufferarray.h>
 #include <bufferstore.h>
 #include <Enum.h>
+#include <path.h>
+#include <plpintl.h>
+#include <ppsocket.h>
+#include <rclip.h>
+#include <rfsv.h>
+#include <rpcs.h>
 
 #include <iostream>
 #include <fstream>
@@ -617,57 +619,20 @@ ftp::getClipData(rpcs & r, rfsv & a, rclip & rc, ppsocket & rclipSocket, const c
     return 0;
 }
 
-/* Compute parent directory of an EPOC directory. */
-static char *epoc_dirname(const char *path) {
-    char *f1 = xstrdup(path);
-    char *p = f1 + strlen(f1);
-
-    /* Skip trailing slash. */
-    if (p > f1)
-        *--p = '\0';
-
-    /* Skip backwards to next slash. */
-    while ((p > f1) && (*p != '/') && (*p != '\\'))
-        p--;
-
-    /* If we have just a drive letter, colon and slash, keep exactly that. */
-    if (p - f1 < 3)
-        p = f1 + 3;
-
-    /* Truncate the string at the current point, and return it. */
-    *p = '\0';
-
-    return f1;
-}
-
-/* Compute new directory from path, which may be absolute or relative, and
-   cwd. */
+/**
+ * Compute new directory from path, which may be absolute or relative, and cwd.
+*/
 static char *epoc_dir_from(const char *path) {
-    char *f1;
 
-    /* If we have asked for parent dir, get dirname of cwd. */
-    if (!strcmp(path, "..")) {
-        f1 = epoc_dirname(psionDir);
-    } else {
-        /* If path is relative, append it to cwd. */
-        if ((path[0] != '/') && (path[0] != '\\') && (path[1] != ':'))
-            f1 = xasprintf("%s%s", psionDir, path);
-        /* Otherwise, path is absolute, so duplicate it. */
-        else
-            f1 = xstrdup(path);
-    }
+    // Resolve the path against the current remote working directory (global).
+    char *f1 = Path::resolveEPOCPath(path, psionDir);
 
-    /* Ensure path ends with a slash. */
+    // Ensure path ends with a slash.
     if ((f1[strlen(f1) - 1] != '/') && (f1[strlen(f1) - 1] != '\\')) {
         char *f2 = xasprintf("%s%s", f1, "\\");
         free(f1);
         f1 = f2;
     }
-
-    /* Convert forward slashes in new path to backslashes. */
-    for (char *p = f1; *p; p++)
-        if (*p == '/')
-            *p = '\\';
 
     return f1;
 }
@@ -956,8 +921,10 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, vector<char *> a
             struct timeval etime;
             struct stat stbuf;
 
-            char *f1 = xasprintf("%s%s", psionDir, argv[1]);
-            char *f2 = xasprintf("%s%s%s", localDir, "/", argc == 2 ? argv[1] : argv[2]);
+            char *f1 = Path::resolveEPOCPath(argv[1], psionDir);
+            string basename = Path::getEPOCBasename(string(f1));
+            char *f2 = xasprintf("%s%s%s", localDir, "/", argc == 2 ? basename.c_str() : argv[2]);
+
             gettimeofday(&stime, 0L);
             if ((res = a.copyFromPsion(f1, f2, NULL, cab)) != rfsv::E_PSI_GEN_NONE) {
                 if (hash)
@@ -967,7 +934,7 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, vector<char *> a
             } else {
                 if (hash)
                     cout << endl;
-                gettimeofday(&etime, 0L);
+                gettimeofday(&etime, nullptr);
                 long dsec = etime.tv_sec - stime.tv_sec;
                 long dhse = (etime.tv_usec / 10000) -
                     (stime.tv_usec /10000);
@@ -1048,7 +1015,7 @@ session(rfsv & a, rpcs & r, rclip & rc, ppsocket & rclipSocket, vector<char *> a
             } else {
                 if (hash)
                     cout << endl;
-                gettimeofday(&etime, 0L);
+                gettimeofday(&etime, nullptr);
                 long dsec = etime.tv_sec - stime.tv_sec;
                 long dhse = (etime.tv_usec / 10000) -
                     (stime.tv_usec /10000);
