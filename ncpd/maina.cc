@@ -30,6 +30,7 @@
 #include "ppsocket.h"
 #include "iowatch.h"
 #include "log.h"
+#include "ncp_log.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -435,8 +436,8 @@ run(int argc, char **argv)
     unsigned short nverbose = 0;
 
     struct servent *se = getservbyname("psion", "tcp");
-    dlog.setOn(false);
-    elog.setOn(false);
+    dlog.useFileDescriptor();
+    elog.useFileDescriptor();
     endservent();
     if (se != 0L)
         sockNum = ntohs(se->s_port);

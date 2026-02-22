@@ -24,12 +24,6 @@
 #include "config.h"
 #include "ncpd.h"
 
-#include "main.h"
-#include "socketchan.h"
-#include "mp_serial.h"
-#include "packet.h"
-#include "link.h"
-
 #include <vector>
 
 #include "bufferstore.h"
@@ -38,9 +32,6 @@
 
 class Link;
 class channel;
-
-#define NCP_DEBUG_LOG  1
-#define NCP_DEBUG_DUMP 2
 
 /**
  * Representation of a server process on the PC
