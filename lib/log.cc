@@ -29,7 +29,7 @@
 logbuf::logbuf(int loglevel, int fd) {
     ptr = buf;
     len = 0;
-    _on = true;
+    _use_syslog = true;
     _level = loglevel;
     _fd = fd;
 }
@@ -38,7 +38,7 @@ int logbuf::overflow(int c) {
     if (c == '\n') {
         *ptr++ = '\n';
         *ptr = '\0';
-        if (_on)
+        if (_use_syslog)
             syslog(_level, "%s", buf);
         else if (_fd != -1)
             ignore_value(write(_fd, buf, len + 1));

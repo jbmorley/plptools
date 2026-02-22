@@ -30,10 +30,7 @@
 #include "Enum.h"
 #include <vector>
 
-#define LNK_DEBUG_LOG  4
-#define LNK_DEBUG_DUMP 8
-
-class ncp;
+class NCP;
 class packet;
 
 /**
@@ -77,10 +74,10 @@ public:
      *
      * @param fname Name of serial device.
      * @param baud  Speed of serial device.
-     * @param ncp   The calling ncp instance.
+     * @param ncp   The calling NCP instance.
      * @_verbose    Verbosity (for debugging/troubleshooting)
      */
-    Link(const char *fname, int baud, ncp *ncp, unsigned short _verbose = 0);
+    Link(const char *fname, int baud, NCP *ncp, unsigned short _verbose, const int cancellationFd);
 
     /**
      * Disconnects from device and destroys instance.
@@ -177,7 +174,7 @@ private:
     pthread_t checkthread;
     pthread_mutex_t queueMutex;
 
-    ncp *theNCP;
+    NCP *theNCP;
     packet *p;
     int txSequence;
     int rxSequence;

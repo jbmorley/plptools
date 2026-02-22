@@ -1,11 +1,11 @@
 #ifndef _libplp_h_
 #define _libplp_h_
 
+#include <plpdirent.h>
 #include <ppsocket.h>
+#include <psiprocess.h>
 #include <rfsv.h>
 #include <rfsvfactory.h>
-#include <rpcsfactory.h>
-#include <plpdirent.h>
 
 class RFSVClient {
 public:
@@ -34,23 +34,6 @@ private:
 extern const char *plpdirent_get_name(PlpDirent *dirent);
 extern const char *string_cstr(std::string string);
 extern const char *psiprocess_get_name(PsiProcess *process);
-
-class RPCSClient {
-public:
-    RPCSClient();
-    ~RPCSClient();
-
-    bool connect(const char * const Peer, int PeerPort);
-    rfsv::errs getMachineType(rpcs::machs &machineType);
-    rfsv::errs getMachineInfo(rpcs::machineInfo &machineInfo);
-    rfsv::errs getOwnerInfo(bufferArray &owner);
-    rfsv::errs execProgram(const char *program, const char *args);
-    rfsv::errs stopPrograms();
-private:
-    ppsocket *_socket;
-    rpcsfactory *_rpcsfactory;
-    rpcs *_rpcs;
-};
 
 #endif
 

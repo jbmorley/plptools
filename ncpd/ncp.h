@@ -24,12 +24,6 @@
 #include "config.h"
 #include "ncpd.h"
 
-#include "main.h"
-#include "socketchan.h"
-#include "mp_serial.h"
-#include "packet.h"
-#include "link.h"
-
 #include <vector>
 
 #include "bufferstore.h"
@@ -38,9 +32,6 @@
 
 class Link;
 class channel;
-
-#define NCP_DEBUG_LOG  1
-#define NCP_DEBUG_DUMP 2
 
 /**
  * Representation of a server process on the PC
@@ -57,14 +48,17 @@ private:
     std::string name;
 };
 
-class ncp {
+typedef void (*statusCallback_t)(void *, int);
+
+class NCP {
 public:
-    ncp(const char *fname,
+    NCP(const char *fname,
         int baud,
-        unsigned short _verbose,
+        unsigned short verbose,
+        const int cancellationFd,
         statusCallback_t statusCallback,
-        void *_context);
-    ~ncp();
+        void *context);
+    ~NCP();
 
     int connect(channel *c); // returns channel, or -1 if failure
     void Register(channel *c);

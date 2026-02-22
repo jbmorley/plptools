@@ -28,12 +28,12 @@
 #include "bufferarray.h"
 
 #include "linkchan.h"
+#include "ncp_log.h"
 #include "ncp.h"
-#include "main.h"
 
 using namespace std;
 
-linkChan::linkChan(ncp * _ncpController, int _ncpChannel):channel(_ncpController)
+linkChan::linkChan(NCP* _ncpController, int _ncpChannel):channel(_ncpController)
 {
     registerSer = 0x1234;
     if (_ncpChannel != -1)

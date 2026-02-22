@@ -28,10 +28,6 @@
 #include "bufferstore.h"
 #include "bufferarray.h"
 
-#define PKT_DEBUG_LOG       16
-#define PKT_DEBUG_DUMP      32
-#define PKT_DEBUG_HANDSHAKE 64
-
 extern "C" {
     static void *pump_run(void *);
 }
@@ -41,7 +37,7 @@ class Link;
 class packet
 {
 public:
-    packet(const char *fname, int baud, Link *_link, unsigned short verbose = 0);
+    packet(const char *fname, int baud, Link *_link, unsigned short verbose, const int cancellationFd);
     ~packet();
 
     /**
@@ -105,6 +101,8 @@ private:
 
     char *devname;
     int baud;
+
+    const int cancellationFd;
 };
 
 #endif
