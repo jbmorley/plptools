@@ -56,7 +56,7 @@ ENUM_DEFINITION_BEGIN(Link::link_type, Link::LINK_TYPE_UNKNOWN)
     stringRep.add(Link::LINK_TYPE_EPOC,    N_("EPOC"));
 ENUM_DEFINITION_END(Link::link_type)
 
-Link::Link(const char *fname, int baud, ncp *_ncp, unsigned short _verbose)
+Link::Link(const char *fname, int baud, NCP *_ncp, unsigned short _verbose, const int cancellationFd)
     : p(0)
 {
     theNCP = _ncp;
@@ -73,7 +73,7 @@ Link::Link(const char *fname, int baud, ncp *_ncp, unsigned short _verbose)
     srandom(time(NULL));
     conMagic = random();
 
-    p = new packet(fname, baud, this, _verbose);
+    p = new packet(fname, baud, this, _verbose, cancellationFd);
 
     pthread_mutex_init(&queueMutex, NULL);
     pthread_create(&checkthread, NULL, expire_check, this);
@@ -84,8 +84,13 @@ Link::Link(const char *fname, int baud, ncp *_ncp, unsigned short _verbose)
 
 Link::~Link()
 {
-    flush();
+    // flush();
+    // pthread_cancel(checkthread);
+    // pthread_mutex_destroy(&queueMutex);
+    // delete p;
+    purgeAllQueues();
     pthread_cancel(checkthread);
+    pthread_join(checkthread, NULL);   // must complete before either of these
     pthread_mutex_destroy(&queueMutex);
     delete p;
 }

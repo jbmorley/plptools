@@ -38,12 +38,6 @@ IOWatch::~IOWatch() {
     delete [] io;
 }
 
-void IOWatch::reinit() {
-    num = 0;
-    io = new int [FD_SETSIZE];
-    memset(io, -1, FD_SETSIZE);
-}
-
 void IOWatch::addIO(const int fd) {
     int pos;
     for (pos = 0; pos < num && fd < io[pos]; pos++);
@@ -64,8 +58,7 @@ void IOWatch::remIO(const int fd) {
     }
 }
 
-// TODO: This is doing a select so it might be cleaner to inject a shutdown signal?
-bool IOWatch::watch(const long secs, const long usecs, const int shutdown_fd) {
+bool IOWatch::watch(const long secs, const long usecs, const int cancellationFd) {
     int maxfd = 0;
     fd_set iop;
     FD_ZERO(&iop);
@@ -74,12 +67,12 @@ bool IOWatch::watch(const long secs, const long usecs, const int shutdown_fd) {
         if (io[i] > maxfd)
             maxfd = io[i];
     }
-    FD_SET(shutdown_fd, &iop);
-    if (shutdown_fd > maxfd) {
-        maxfd = shutdown_fd;
+    FD_SET(cancellationFd, &iop);
+    if (cancellationFd > maxfd) {
+        maxfd = cancellationFd;
     }
     struct timeval t;
     t.tv_usec = usecs;
     t.tv_sec = secs;
-    return (select(maxfd+1, &iop, NULL, NULL, &t) > 0);
+    return select(maxfd + 1, &iop, NULL, NULL, &t);
 }

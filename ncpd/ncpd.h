@@ -21,42 +21,6 @@
 #ifndef _ncpd_h_
 #define _ncpd_h_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef struct ncp_state ncp_state;
-
-typedef void (*statusCallback_t)(void *, int);
-
-int run(int argc, char **argv);
-
-ncp_state *ncp_init();
-
-int ncp_start(int sockNum,
-              int baudRate,
-              const char *host,
-              const char *serialDevice,
-              unsigned short nverbose,
-              statusCallback_t statusCallback,
-              void *context,
-              ncp_state *state);
-
-int ncp_stop(ncp_state *state);
-
-int setup_signal_handlers();
-
-int ncpd(int sockNum,
-         int baudRate,
-         const char *host,
-         const char *serialDevice,
-         unsigned short nverbose,
-         statusCallback_t statusCallback,
-         void *context,
-         ncp_state *state);
-
-#ifdef __cplusplus
-}
-#endif
+#include <ncp_session.h>
 
 #endif

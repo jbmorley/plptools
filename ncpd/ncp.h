@@ -48,14 +48,17 @@ private:
     std::string name;
 };
 
-class ncp {
+typedef void (*statusCallback_t)(void *, int);
+
+class NCP {
 public:
-    ncp(const char *fname,
+    NCP(const char *fname,
         int baud,
-        unsigned short _verbose,
+        unsigned short verbose,
+        const int cancellationFd,
         statusCallback_t statusCallback,
-        void *_context);
-    ~ncp();
+        void *context);
+    ~NCP();
 
     int connect(channel *c); // returns channel, or -1 if failure
     void Register(channel *c);
