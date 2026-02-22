@@ -366,7 +366,6 @@ closeSocket(void)
         return false;
     }
     m_Socket = INVALID_SOCKET;
-    m_Bound = false;
     return true;
 }
 

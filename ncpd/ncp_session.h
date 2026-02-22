@@ -32,25 +32,7 @@
 #include "ncp.h"
 #include "socketchan.h"
 
-#if __has_attribute(swift_attr)
-#define SWIFT_NONCOPYABLE __attribute__((swift_attr("~Copyable")))
-#else
-#define SWIFT_NONCOPYABLE
-#endif
-
 typedef void (*NCPStatusCallback)(void *, int);
-
-extern void *ncp_session_init(int sockNum,
-                              int baudRate,
-                              const char *host,
-                              const char* serialDevice,
-                              bool autoexit,
-                              unsigned short nverbose,
-                              NCPStatusCallback statusCallback,
-                              void *callbackContext);
-extern void ncp_session_start(void *session);
-extern void ncp_session_cancel(void *session);
-extern void ncp_session_wait(void *session);
 
 class NCPSession {
 public:

@@ -21,6 +21,6 @@
 #ifndef _ncpd_h_
 #define _ncpd_h_
 
-#include <ncp_session.h>
+#include "ncp_session.h"
 
 #endif
