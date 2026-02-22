@@ -47,11 +47,8 @@ ncp::ncp(const char *fname,
          void *_context)
 {
     channelPtr = new channel*[MAX_CHANNELS_PSION + 1];
-    assert(channelPtr);
     messageList = new bufferStore[MAX_CHANNELS_PSION + 1];
-    assert(messageList);
     remoteChanList = new int[MAX_CHANNELS_PSION + 1];
-    assert(remoteChanList);
 
     failed = false;
     verbose = _verbose;
@@ -68,7 +65,6 @@ ncp::ncp(const char *fname,
         channelPtr[i] = NULL;
 
     l = new Link(fname, baud, this, verbose);
-    assert(l);
 }
 
 ncp::~ncp()
