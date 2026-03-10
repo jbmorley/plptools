@@ -24,6 +24,7 @@
 
 #include "config.h"
 
+#include <mutex>
 #include <string>
 #include <bufferstore.h>
 #include <tcpsocket.h>
@@ -133,8 +134,8 @@ private:
     IOWatch connectionListenerWatch_;
 
     TCPSocket skt_;
-    int socketChannelCount_ = 0;
-    SocketChannel *socketChannels_[256 + 1] = {};
+    std::mutex socketChannelLock_;
+    std::vector<SocketChannel *>socketChannels_;
     int cancellationPipe_[2] = { -1, -1 };
 };
 
