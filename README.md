@@ -80,8 +80,6 @@ git clone https://github.com/plptools/plptools.git
 
 To make a release you need the GitHub CLI (see https://cli.github.com).
 
-
-
 ## Updating
 
 This is a branch of plptools with custom modifications to make it possible to use it with the Swift package manager. Catching up to upstream currently involves a few fiddly steps. Hopefully these can be reduced in the future as this is slowly unbranched.
@@ -107,3 +105,9 @@ rm -r ncpd/.libs
 ```
 
 (It might be possible to generate a custom module map to avoid needing to do this.)
+
+## License
+
+plptools is licensed under the GNU General Public License (GPL) version 2. It includes the following separately licensed third-party libraries and components:
+
+- [doctest](https://github.com/doctest/doctest) (/tests/doctest.h), MIT License

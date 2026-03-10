@@ -49,14 +49,16 @@ public:
                std::string serialDevice,
                bool autoexit,
                unsigned short nverbose,
-               NCPStatusCallback _statusCallback,
-               void *_callbackContext)
-    : host_(host)
+               NCPStatusCallback statusCallback,
+               void *callbackContext)
+    : portNumber_(portNumber)
+    , baudRate_(baudRate)
+    , host_(host)
     , serialDevice_(serialDevice)
     , autoexit_(autoexit)
     , nverbose_(nverbose)
-    , statusCallback(_statusCallback)
-    , callbackContext(_callbackContext) {}
+    , statusCallback_(statusCallback)
+    , callbackContext_(callbackContext) {}
 
     NCPSession(const NCPSession&) = delete;
     NCPSession& operator=(const NCPSession&) = delete;
@@ -107,8 +109,8 @@ private:
     std::string serialDevice_;
     bool autoexit_;
     unsigned short nverbose_;
-    NCPStatusCallback statusCallback;
-    void *callbackContext;
+    NCPStatusCallback statusCallback_;
+    void *callbackContext_;
 
     // State.
 
@@ -132,7 +134,7 @@ private:
 
     ppsocket skt_;
     int socketChannelCount_ = 0;
-    socketChan *socketChannels_[MAX_CHANNELS_PSION + 1] = {};
+    socketChan *socketChannels_[256 + 1] = {};
     int cancellationPipe_[2] = { -1, -1 };
 };
 

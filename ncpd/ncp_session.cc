@@ -141,8 +141,8 @@ void *ncp_session_main_thread(void *arg) {
                            session->baudRate_,
                            session->nverbose_,
                            session->cancellationPipe_[0],
-                           session->statusCallback,
-                           session->callbackContext);
+                           session->statusCallback_,
+                           session->callbackContext_);
     pthread_t thr_a, thr_b;
     if (pthread_create(&thr_a, NULL, link_thread, session) != 0) {
         lerr << "Could not create Link thread" << endl;
@@ -156,7 +156,7 @@ void *ncp_session_main_thread(void *arg) {
     // Run the session until cancelled.
     while (!session->isCancelled())
         check_for_new_socket_connection(session);
-    session->statusCallback(session->callbackContext, 0);
+    session->statusCallback_(session->callbackContext_, 0);
 
     // Shutdown.
     linf << _("terminating") << endl;
