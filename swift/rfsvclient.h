@@ -2,7 +2,7 @@
 #define _libplp_h_
 
 #include <plpdirent.h>
-#include <ppsocket.h>
+#include <tcpsocket.h>
 #include <psiprocess.h>
 #include <rfsv.h>
 #include <rfsvfactory.h>
@@ -26,7 +26,7 @@ public:
     rfsv::errs fgeteattr(const char * const name, PlpDirent &e);
     rfsv::errs fgetattr(const char * const name, uint32_t &attr);
 private:
-    ppsocket *_socket;
+    TCPSocket *_socket;
     rfsvfactory *_rfsvfactory;
     rfsv *_rfsv;
 };

@@ -6,7 +6,7 @@
 #include <iostream>
 
 RPCSClient::RPCSClient() : _socket(0), _rpcsfactory(0), _rpcs(0) {
-    _socket = new ppsocket();
+    _socket = new TCPSocket();
 }
 
 RPCSClient::~RPCSClient() {

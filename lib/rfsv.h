@@ -30,7 +30,7 @@
 
 typedef std::deque<class PlpDirent> PlpDir;
 
-class ppsocket;
+class TCPSocket;
 class PlpDrive;
 
 inline const int RFSV_SENDLEN = 2000;
@@ -648,7 +648,7 @@ protected:
     */
     const char *getConnectName();
 
-    ppsocket *skt;
+    TCPSocket *skt;
     Enum<errs> status;
     int32_t serNum;
 };

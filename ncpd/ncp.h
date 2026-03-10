@@ -28,7 +28,7 @@
 
 #include "bufferstore.h"
 #include "linkchan.h"
-#include "ppsocket.h"
+#include "tcpsocket.h"
 
 #define MAX_CHANNELS_PSION 256
 #define MAX_CHANNELS_SIBO  8
@@ -43,7 +43,7 @@ class channel;
  */
 class PcServer {
 public:
-    PcServer(ppsocket *, std::string _name) { name = _name; }
+    PcServer(TCPSocket *, std::string _name) { name = _name; }
     ~PcServer() {}
     bool clientConnect(int, int) { return false; }
     std::string getName() { return name; }
@@ -76,7 +76,7 @@ public:
     bool gotLinkChannel();
 
     PcServer *findPcServer(const char *name);
-    void registerPcServer(ppsocket *skt, const char *name);
+    void registerPcServer(TCPSocket *skt, const char *name);
     void unregisterPcServer(PcServer *server);
 
     void setVerbose(unsigned short);

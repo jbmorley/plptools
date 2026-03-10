@@ -1,7 +1,7 @@
 #ifndef _rpcsclient_h_
 #define _rpcsclient_h_
 
-#include <ppsocket.h>
+#include <tcpsocket.h>
 #include <rfsv.h>
 #include <rpcsfactory.h>
 
@@ -17,7 +17,7 @@ public:
     rfsv::errs execProgram(const char *program, const char *args);
     rfsv::errs stopPrograms();
 private:
-    ppsocket *_socket;
+    TCPSocket *_socket;
     rpcsfactory *_rpcsfactory;
     rpcs *_rpcs;
 };

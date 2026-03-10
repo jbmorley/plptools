@@ -6,7 +6,7 @@
 using namespace std;
 
 RFSVClient::RFSVClient() : _socket(0), _rfsvfactory(0), _rfsv(0) {
-    _socket = new ppsocket();
+    _socket = new TCPSocket();
 }
 
 RFSVClient::~RFSVClient() {
