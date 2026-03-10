@@ -232,7 +232,7 @@ decodeControlMessage(bufferStore & buff)
                 statusCallback(context, 1);
                 linf << _("Connected with a S")
                      << ((protocolVersion == PV_SERIES_5) ? 5 : 3) << _(" at ")
-                     << getSpeed() << _("baud") << endl;
+                     << getSpeed() << _(" baud") << endl;
                 // Create linkchan if it does not yet exist
                 if (!lChan) {
                     if (verbose & NCP_DEBUG_LOG)
