@@ -30,7 +30,7 @@
 #include <iowatch.h>
 
 #include "ncp.h"
-#include "socketchan.h"
+#include "socketchannel.h"
 
 typedef void (*NCPStatusCallback)(void *, int);
 
@@ -122,7 +122,7 @@ private:
     NCP *ncp_ = nullptr;
 
     /**
-    * Used to watch all active @ref socketChan instances (stored in @ref socketChannels_) to see if they're readable.
+    * Used to watch all active @ref SocketChannel instances (stored in @ref socketChannels_) to see if they're readable.
     */
     IOWatch socketChannelWatch_;
 
@@ -134,7 +134,7 @@ private:
 
     ppsocket skt_;
     int socketChannelCount_ = 0;
-    socketChan *socketChannels_[256 + 1] = {};
+    SocketChannel *socketChannels_[256 + 1] = {};
     int cancellationPipe_[2] = { -1, -1 };
 };
 
