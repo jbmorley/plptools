@@ -197,7 +197,7 @@ void *ncp_session_main_thread(void *arg) {
     while (!session->isCancelled()) {
         check_for_new_socket_connection(session);
     }
-    session->statusCallback_(session->callbackContext_, 0);
+    session->statusCallback_(session->callbackContext_, false, 0);
     linf << _("terminating") << endl;
     void *ret;
     pthread_join(thr_a, &ret);

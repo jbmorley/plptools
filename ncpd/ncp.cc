@@ -229,7 +229,7 @@ decodeControlMessage(bufferStore & buff)
                 controlChannel(localChan, NCON_MSG_CONNECT_RESPONSE, b);
                 if (verbose & NCP_DEBUG_LOG)
                     lout << "ncp: Link UP" << endl;
-                statusCallback(context, 1);
+                statusCallback(context, true, protocolVersion);
                 linf << _("Connected with a S")
                      << ((protocolVersion == PV_SERIES_5) ? 5 : 3) << _(" at ")
                      << getSpeed() << _(" baud") << endl;
@@ -348,7 +348,7 @@ decodeControlMessage(bufferStore & buff)
                 lout << " ch=" << (int) buff.getByte(0) << endl;
             disconnect(buff.getByte(0));
             l->purgeQueue(remoteChan);
-            statusCallback(context, 0);
+            statusCallback(context, false, 0);
             break;
 
         case NCON_MSG_DATA_XOFF:
@@ -502,7 +502,7 @@ hasFailed()
     }
     failed |= lfailed;
     if (failed) {
-        statusCallback(context, 0);
+        statusCallback(context, false, 0);
         if (lChan) {
             channelPtr[lChan->getNcpChannel()] = NULL;
             delete lChan;

@@ -32,7 +32,7 @@
 #include "ncp.h"
 #include "socketchannel.h"
 
-typedef void (*NCPStatusCallback)(void *, int);
+typedef void (*NCPStatusCallback)(void *context, bool isConnected, int protocolVersion);
 
 /**
 * Responsible for orchestrating the high-level life cycle of a daemon-side %NCP server and multiplexing connections

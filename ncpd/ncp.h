@@ -52,7 +52,7 @@ private:
     std::string name;
 };
 
-typedef void (*statusCallback_t)(void *, int);
+typedef void (*statusCallback_t)(void *, bool, int);
 
 class NCP {
 public:
