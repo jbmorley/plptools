@@ -175,7 +175,6 @@ void *ncp_session_main_thread(void *arg) {
         << _("Listening at ") << session->host_ << ":" << session->portNumber_
         << _(" using device ") << session->serialDevice_ << endl;
 
-    // Start the session.
     session->ncp_ = new NCP(session->serialDevice_.c_str(),
                            session->baudRate_,
                            session->nverbose_,
@@ -191,14 +190,10 @@ void *ncp_session_main_thread(void *arg) {
         lerr << "Could not create Socket thread" << endl;
         exit(-1);
     }
-
-    // Run the session until cancelled.
     while (!session->isCancelled()) {
         check_for_new_socket_connection(session);
     }
     session->statusCallback_(session->callbackContext_, 0);
-
-    // Shutdown.
     linf << _("terminating") << endl;
     void *ret;
     pthread_join(thr_a, &ret);
