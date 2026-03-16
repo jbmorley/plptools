@@ -22,7 +22,6 @@
 #pragma once
 
 #include "config.h"
-#include "ncpd.h"
 
 #include <vector>
 
@@ -52,8 +51,6 @@ public:
 private:
     std::string name;
 };
-
-typedef void (*statusCallback_t)(void *, bool, int);
 
 class NCP {
 public:

@@ -33,8 +33,6 @@
 #include "ncpstatuscallback.h"
 #include "socketchannel.h"
 
-typedef void (*NCPStatusCallback)(void *context, bool isConnected, int protocolVersion);
-
 /**
 * Responsible for orchestrating the high-level life cycle of a daemon-side %NCP server and multiplexing connections
 * over a single hardware comms channel (serial port, etc). Creates and manages three threads

@@ -200,7 +200,6 @@ void *ncp_session_main_thread(void *arg) {
     if (session->statusCallback_) {
         session->statusCallback_(session->callbackContext_, false, 0);
     }
-    session->statusCallback_(session->callbackContext_, false, 0);
     linf << _("terminating") << endl;
     void *ret;
     pthread_join(thr_a, &ret);
