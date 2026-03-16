@@ -30,6 +30,7 @@
 #include <iowatch.h>
 
 #include "ncp.h"
+#include "ncpstatuscallback.h"
 #include "socketchannel.h"
 
 typedef void (*NCPStatusCallback)(void *context, bool isConnected, int protocolVersion);
@@ -49,8 +50,8 @@ public:
                std::string serialDevice,
                bool autoexit,
                unsigned short nverbose,
-               NCPStatusCallback statusCallback,
-               void *callbackContext)
+               NCPStatusCallback statusCallback = nullptr,
+               void *callbackContext = nullptr)
     : portNumber_(portNumber)
     , baudRate_(baudRate)
     , host_(host)

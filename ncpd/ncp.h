@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999-2001 Fritz Elfert <felfert@to.com>
+ *  Copyright (C) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -18,8 +19,7 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#ifndef _ncp_h_
-#define _ncp_h_
+#pragma once
 
 #include "config.h"
 #include "ncpd.h"
@@ -28,6 +28,7 @@
 
 #include "bufferstore.h"
 #include "linkchan.h"
+#include "ncpstatuscallback.h"
 #include "tcpsocket.h"
 
 #define MAX_CHANNELS_PSION 256
@@ -60,7 +61,7 @@ public:
         int baud,
         unsigned short verbose,
         const int cancellationFd,
-        statusCallback_t statusCallback,
+        NCPStatusCallback statusCallback,
         void *context);
     ~NCP();
 
@@ -110,14 +111,12 @@ private:
     channel **channelPtr;
     bufferStore *messageList;
     int *remoteChanList;
-    bool failed;
+    bool failed = false;
     short int protocolVersion;
     linkChan *lChan;
     int maxChannels;
     std::vector<PcServer> pcServers;
     int lastSentChannel;
-    statusCallback_t statusCallback;
-    void *context;
+    NCPStatusCallback statusCallback_;
+    void *callbackContext_;
 };
-
-#endif
