@@ -56,7 +56,7 @@ class rfsvDirhandle {
 
 private:
     uint32_t h;
-    bufferStore b;
+    BufferStore b;
 };
 
 #if defined(__clang__) && defined(__apple_build_version__) && __apple_build_version__ >= 16000026  // Xcode 16.0
