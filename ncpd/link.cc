@@ -34,7 +34,7 @@
 #include "link.h"
 #include "ncp_log.h"
 #include "ncp.h"
-#include "packet.h"
+#include "datalink.h"
 
 extern "C" {
     static void *expire_check(void *arg)
@@ -57,7 +57,6 @@ ENUM_DEFINITION_BEGIN(Link::link_type, Link::LINK_TYPE_UNKNOWN)
 ENUM_DEFINITION_END(Link::link_type)
 
 Link::Link(const char *fname, int baud, NCP *_ncp, unsigned short _verbose, const int cancellationFd)
-    : p(0)
 {
     theNCP = _ncp;
     verbose = _verbose;
@@ -73,7 +72,7 @@ Link::Link(const char *fname, int baud, NCP *_ncp, unsigned short _verbose, cons
     srandom(time(NULL));
     conMagic = random();
 
-    p = new packet(fname, baud, this, _verbose, cancellationFd);
+    dataLink_ = new DataLink(fname, baud, this, _verbose, cancellationFd);
 
     pthread_mutex_init(&queueMutex, NULL);
     pthread_create(&checkthread, NULL, expire_check, this);
@@ -88,7 +87,7 @@ Link::~Link()
     pthread_cancel(checkthread);
     pthread_join(checkthread, NULL);
     pthread_mutex_destroy(&queueMutex);
-    delete p;
+    delete dataLink_;
 }
 
 unsigned long Link::
@@ -108,22 +107,9 @@ reset() {
     purgeAllQueues();
     for (int i = 0; i < 256; i++)
         xoff[i] = false;
-    p->reset();
+    dataLink_->reset();
     // submit a link request
     sendReqReq();
-}
-
-unsigned short Link::
-getVerbose()
-{
-    return verbose;
-}
-
-void Link::
-setVerbose(unsigned short _verbose)
-{
-    verbose = _verbose;
-    p->setVerbose(verbose);
 }
 
 void Link::
@@ -176,9 +162,10 @@ sendAck(int seq)
         int lseq = (seq & 7) | 8;
         seq = (hseq << 8) + lseq;
         tmp.prependWord(seq);
-    } else
+    } else {
         tmp.prependByte(seq);
-    p->send(tmp);
+    }
+    dataLink_->send(tmp, isEPOC_);
 }
 
 void Link::
@@ -199,7 +186,7 @@ sendReqCon()
     pthread_mutex_lock(&queueMutex);
     ackWaitQueue.push_back(e);
     pthread_mutex_unlock(&queueMutex);
-    p->send(tmp);
+    dataLink_->send(tmp, isEPOC_);
 }
 
 void Link::
@@ -219,7 +206,7 @@ sendReqReq()
     pthread_mutex_lock(&queueMutex);
     ackWaitQueue.push_back(e);
     pthread_mutex_unlock(&queueMutex);
-    p->send(tmp);
+    dataLink_->send(tmp, isEPOC_);
 }
 
 void Link::
@@ -232,14 +219,15 @@ sendReq()
         lout << "Link: >> con seq=1" << endl;
     tmp.addByte(0x20);
     // No Ack expected for this, so no new entry in ackWaitQueue
-    p->send(tmp);
+    dataLink_->send(tmp, isEPOC_);
 }
 
 void Link::
 receive(bufferStore buff)
 {
-    if (!p)
+    if (!dataLink_) {
         return;
+    }
 
     vector<ackWaitQueueElement>::iterator i;
     bool ackFound;
@@ -294,11 +282,11 @@ receive(bufferStore buff)
                         default:
                             theNCP->receive(buff);
                     }
-                } else
+                } else {
                     theNCP->receive(buff);
-
+                }
             } else {
-                    sendAck(rxSequence);
+                sendAck(rxSequence);
                 if (verbose & LNK_DEBUG_LOG)
                     lout << "Link: DUP\n";
             }
@@ -336,7 +324,7 @@ receive(bufferStore buff)
                     rxSequence = 0;
                     txSequence = 1;
                     purgeAllQueues();
-                    p->setEpoc(false);
+                    isEPOC_ = false;
                     if (verbose & LNK_DEBUG_LOG)
                         lout << "Link: 1-linkType set to " << linkType << endl;
                 }
@@ -369,7 +357,7 @@ receive(bufferStore buff)
                             if (verbose & LNK_DEBUG_LOG)
                                 lout << "Link: >> RETRANSMIT seq=" << i->seq
                                      << endl;
-                            p->send(i->data);
+                            dataLink_->send(i->data, isEPOC_);
                         }
                         break;
                     }
@@ -401,7 +389,7 @@ receive(bufferStore buff)
                         seqMask = 0x7ff;
                         // EPOC can handle up to 8 unacknowledged packets
                         maxOutstanding = 8;
-                        p->setEpoc(true);
+                        isEPOC_ = true;
                         if (verbose & LNK_DEBUG_LOG) {
                             lout << "Link: << con seq=" << seq ;
                             if (verbose & LNK_DEBUG_DUMP)
@@ -432,7 +420,7 @@ receive(bufferStore buff)
                     seqMask = 0x7ff;
                     // EPOC can handle up to 8 unacknowledged packets
                     maxOutstanding = 8;
-                    p->setEpoc(true);
+                    isEPOC_ = true;
                     failed = false;
                     sendReqCon();
                 } else {
@@ -446,7 +434,7 @@ receive(bufferStore buff)
                     rxSequence = 0;
                     txSequence = 1; // Our ReqReq was seq 0
                     purgeAllQueues();
-                    p->setEpoc(false);
+                    isEPOC_ = false;
                     sendAck(rxSequence);
                 }
             }
@@ -555,7 +543,7 @@ transmit(bufferStore buf)
         pthread_mutex_lock(&queueMutex);
         ackWaitQueue.push_back(e);
         pthread_mutex_unlock(&queueMutex);
-        p->send(buf);
+        dataLink_->send(buf, isEPOC_);
     }
 }
 
@@ -626,7 +614,7 @@ retransmit()
                 i->stamp = now;
                 if (verbose & LNK_DEBUG_LOG)
                     lout << "Link: >> RETRANSMIT seq=" << i->seq << endl;
-                p->send(i->data);
+                dataLink_->send(i->data, isEPOC_);
             }
         }
     pthread_mutex_unlock(&queueMutex);
@@ -647,7 +635,7 @@ stuffToSend()
 bool Link::
 hasFailed()
 {
-    bool lfailed = p->linkFailed();
+    bool lfailed = dataLink_->linkFailed();
     if (failed || lfailed) {
         if (verbose & LNK_DEBUG_LOG)
             lout << "Link: hasFailed: " << failed << ", " << lfailed << endl;
@@ -665,5 +653,5 @@ getLinkType()
 int Link::
 getSpeed()
 {
-    return p->getSpeed();
+    return dataLink_->getSpeed();
 }

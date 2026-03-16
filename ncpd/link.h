@@ -30,8 +30,8 @@
 #include "Enum.h"
 #include <vector>
 
+class DataLink;
 class NCP;
-class packet;
 
 /**
  * Describes a transmitted packet which has not yet
@@ -127,21 +127,6 @@ public:
     void purgeQueue(int channel);
 
     /**
-     * Set verbosity of Link and underlying packet instance.
-     *
-     * @param _verbose Verbosity (a bitmapped value, see LINK_DEBUG_.. constants)
-     */
-    void setVerbose(unsigned short _verbose);
-
-    /**
-     * Get current verbosity of Link.
-     *
-     * @returns The verbosity, specified at construction or last call to
-     *  setVerbosity();
-     */
-    unsigned short getVerbose();
-
-    /**
      * Get the current link type.
      *
      * @returns One of LINK_TYPE_... values.
@@ -156,13 +141,13 @@ public:
     int getSpeed();
 
 private:
-    friend class packet;
+    friend class DataLink;
     friend void * expire_check(void *);
 
     /**
-    * Effectively a delegate method that accepts data from our @ref packet instance.
+    * Effectively a delegate method that accepts data from our @ref DataLink instance.
     *
-    * Called on the @ref packet's internal thread.
+    * Called on the @ref DataLink's internal thread.
     */
     void receive(bufferStore buf);
     void transmit(bufferStore buf);
@@ -181,7 +166,8 @@ private:
     pthread_mutex_t queueMutex;
 
     NCP *theNCP;
-    packet *p;
+    DataLink *dataLink_ = nullptr;
+    bool isEPOC_ = false;
     int txSequence;
     int rxSequence;
     int seqMask;

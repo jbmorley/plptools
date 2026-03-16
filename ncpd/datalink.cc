@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999-2001 Fritz Elfert <felfert@to.com>
+ *  Copyright (C) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -25,6 +26,7 @@
 #include <cstring>
 #include <fstream>
 #include <iomanip>
+#include <iowatch.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +42,7 @@
 #include "link.h"
 #include "mp_serial.h"
 #include "ncp_log.h"
-#include "packet.h"
+#include "datalink.h"
 
 #define BUFLEN 4096 // Must be a power of 2
 #define BUFMASK (BUFLEN-1)
@@ -52,94 +54,106 @@
 #define inc1(idx) inca(idx, 1)
 #define normalize(idx) do { idx &= BUFMASK; } while (0)
 
-static unsigned short pumpverbose = 0;
-
 extern "C" {
 /**
  * Signal handler does nothing. It just exists
  * for having the select() below return an
  * interrupted system call.
  */
-static void usr1handler(int sig)
-{
+static void usr1handler(int sig) {
     signal(SIGUSR1, usr1handler);
 }
 
+void log_data(unsigned short options,
+              unsigned short category,
+              std::string description,
+              unsigned char *buffer, int length) {
+    if (!(options & category)) {
+        return;
+    }
+    printf("pump: %s %d bytes: (", description.c_str(), length);
+    for (int i = 0; i<length; i++) {
+        printf("%02x ", buffer[i]);
+    }
+    printf(")\n");
+}
 
 // TODO: `fd` isn't thread-safe.
-static void *pump_run(void *arg)
-{
-    packet *p = (packet *)arg;
+static void *data_pump_thread(void *arg) {
+    DataLink *dataLink = (DataLink *)arg;
     pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
     while (1) {
-        if (p->fd == -1) {
-            fd_set r_set;
-            FD_ZERO(&r_set);
-            FD_SET(p->cancellationFd, &r_set);
-            struct timeval tv = {1, 0};
-            select(p->cancellationFd + 1, &r_set, NULL, NULL, &tv);
+        if (dataLink->fd == -1) {
+            IOWatch cancellationWatch;
+            cancellationWatch.addIO(dataLink->cancellationFd_);
+            cancellationWatch.watch(1, 0);
         } else {
             fd_set r_set;
             fd_set w_set;
-            int res;
-            int count;
 
+            // Conditionally watch to to see if we can read and write from the serial port, depending on whether we have
+            // space in the input buffer, and data in the output buffer.
             FD_ZERO(&r_set);
             w_set = r_set;
-            FD_SET(p->cancellationFd, &r_set);
-            if (hasSpace(p->in))
-                FD_SET(p->fd, &r_set);
-            if (hasData(p->out))
-                FD_SET(p->fd, &w_set);
+            FD_SET(dataLink->cancellationFd_, &r_set);
+            if (hasSpace(dataLink->in))
+                FD_SET(dataLink->fd, &r_set);
+            if (hasData(dataLink->out))
+                FD_SET(dataLink->fd, &w_set);
             struct timeval tv = {1, 0};
-            res = select(MAX(p->fd, p->cancellationFd) + 1, &r_set, &w_set, NULL, &tv);
-            switch (res) {
-                case 0:
-                    break;
-                case -1:
-                    break;
-                default:
-                    if (FD_ISSET(p->fd, &w_set)) {
-                        count = p->outWrite - p->outRead;
-                        if (count < 0)
-                            count = (BUFLEN - p->outRead);
-                        res = write(p->fd, &p->outBuffer[p->outRead], count);
-                        if (res > 0) {
-                            if (pumpverbose & PKT_DEBUG_DUMP) {
-                                int i;
-                                printf("pump: wrote %d bytes: (", res);
-                                for (i = 0; i<res; i++)
-                                    printf("%02x ",
-                                           p->outBuffer[p->outRead + i]);
-                                printf(")\n");
-                            }
-                            int hadSpace = hasSpace(p->out);
-                            inca(p->outRead, res);
-                            if (!hadSpace)
-                                    pthread_kill(p->thisThread, SIGUSR1);
-                        }
+            int res = select(MAX(dataLink->fd, dataLink->cancellationFd_) + 1, &r_set, &w_set, NULL, &tv);
+            if (res <= 0) {
+                // Ignore interrupts and timeouts.
+                continue;
+            }
+
+            // We can write to the transport; write as much as we can.
+            if (FD_ISSET(dataLink->fd, &w_set)) {
+
+                // Work out how much contiguous data there is to write in the out buffer.
+                int count = dataLink->outWrite - dataLink->outRead;
+                if (count < 0) {
+                    count = (BUFLEN - dataLink->outRead);
+                }
+
+                // Write as much data as possible.
+                res = write(dataLink->fd, &dataLink->outBuffer[dataLink->outRead], count);
+                if (res > 0) {
+                    log_data(dataLink->verbose_, PKT_DEBUG_DUMP, "wrote", dataLink->outBuffer + dataLink->outRead, res);
+                    int hadSpace = hasSpace(dataLink->out);
+                    inca(dataLink->outRead, res);
+                    if (!hadSpace) {
+                        pthread_kill(dataLink->ownerThreadId_, SIGUSR1);
                     }
-                    if (FD_ISSET(p->fd, &r_set)) {
-                        count = p->inRead - p->inWrite;
-                        if (count <= 0)
-                            count = (BUFLEN - p->inWrite);
-                        res = read(p->fd, &p->inBuffer[p->inWrite], count);
-                        if (res > 0) {
-                            if (pumpverbose & PKT_DEBUG_DUMP) {
-                                int i;
-                                printf("pump: read %d bytes: (", res);
-                                for (i = 0; i<res; i++)
-                                    printf("%02x ", p->inBuffer[p->inWrite + i]);
-                                printf(")\n");
-                            }
-                            inca(p->inWrite, res);
-                            p->findSync();
-                        }
-                    } else {
-                        if (hasData(p->in))
-                            p->findSync();
-                    }
-                    break;
+                }
+            }
+
+            // We can read from the transport; read as much as we can.
+            if (FD_ISSET(dataLink->fd, &r_set)) {
+
+                // Work out how much contiguous space there is in the buffer.
+                int count = dataLink->inRead - dataLink->inWrite;
+                if (count <= 0) {
+                    count = (BUFLEN - dataLink->inWrite);
+                }
+
+                // Read as much data as possible.
+                res = read(dataLink->fd, &dataLink->inBuffer[dataLink->inWrite], count);
+                if (res > 0) {
+                    log_data(dataLink->verbose_, PKT_DEBUG_DUMP, "read", dataLink->inBuffer + dataLink->inWrite, res);
+                    inca(dataLink->inWrite, res);
+                }
+            }
+
+            // Process any available data.
+            bool isLinkStable = true;
+            if (hasData(dataLink->in)) {
+                isLinkStable = dataLink->processInputData();
+            }
+
+            // Reset if we were unable to establish a stable link.
+            if (!isLinkStable) {
+                dataLink->internalReset();
             }
         }
     }
@@ -147,29 +161,27 @@ static void *pump_run(void *arg)
 
 };
 
-static const int baud_table[] = {
+static const int kBaudRatesTable[] = {
     115200,
     57600,
     38400,
     19200,
     9600,
-    // Lower rates don't make sense ?!
 };
-#define BAUD_TABLE_SIZE (sizeof(baud_table) / sizeof(int))
+#define BAUD_RATES_TABLE_SIZE (sizeof(kBaudRatesTable) / sizeof(int))
 
 using namespace std;
 
-packet::
-packet(const char *fname, int _baud, Link *_link, unsigned short _verbose, const int _cancellationFd)
-: cancellationFd(_cancellationFd)
-{
-    verbose = pumpverbose = _verbose;
-    devname = strdup(fname);
-    assert(devname);
-    baud = _baud;
-    theLINK = _link;
-    isEPOC = false;
-    justStarted = true;
+DataLink::DataLink(const char *fname,
+                   int baud,
+                   Link *link,
+                   unsigned short verbose,
+                   const int cancellationFd)
+: devname(fname)
+, requestedBaudRate_(baud)
+, link_(link)
+, verbose_(verbose)
+, cancellationFd_(cancellationFd) {
 
     // Initialize CRC table
     crc_table[0] = 0;
@@ -180,68 +192,52 @@ packet(const char *fname, int _baud, Link *_link, unsigned short _verbose, const
         crc_table[i * 2 + (carry ? 1 : 0)] = tmp;
     }
 
-    inRead = inWrite = outRead = outWrite = 0;
     inBuffer = new unsigned char[BUFLEN + 1];
     outBuffer = new unsigned char[BUFLEN + 1];
-    assert(inBuffer);
-    assert(outBuffer);
 
-    esc = false;
-    lastFatal = false;
-    serialStatus = -1;
-    lastSYN = startPkt = -1;
-    crcIn = crcOut = 0;
-
-    thisThread = pthread_self();
-    realBaud = baud;
-    if (baud < 0) {
-        baud_index = 1;
-        realBaud = baud_table[0];
+    ownerThreadId_ = pthread_self();
+    baudRate_ = requestedBaudRate_;
+    if (requestedBaudRate_ < 0) {
+        baudRateIndex_ = 1;
+        baudRate_ = kBaudRatesTable[0];
     }
-    fd = init_serial(devname, realBaud, 0);
-    if (fd == -1)
+    fd = init_serial(devname.c_str(), baudRate_, 0);
+    if (fd == -1) {
         lastFatal = true;
-    else {
+    } else {
         signal(SIGUSR1, usr1handler);
-        pthread_create(&datapump, NULL, pump_run, this);
+        pthread_create(&dataPumpThreadId_, NULL, data_pump_thread, this);
     }
 }
 
-packet::
-~packet()
-{
+DataLink::~DataLink() {
     if (fd != -1) {
-        pthread_cancel(datapump);
-        pthread_join(datapump, NULL);
+        pthread_cancel(dataPumpThreadId_);
+        pthread_join(dataPumpThreadId_, NULL);
         ser_exit(fd);
     }
     fd = -1;
     delete []inBuffer;
     delete []outBuffer;
-    free(devname);
 }
 
-void packet::
-reset()
-{
+void DataLink::reset() {
     // This method stops the data pump thread and restarts it, performing a pthread_join. Given this, it's unsafe to be
     // called from the data pump itself. This is a belt and braces check to ensure we don't do that (spoiler: we were).
-    assert(pthread_self() != datapump);
+    assert(pthread_self() != dataPumpThreadId_);
     if (fd != -1) {
-        pthread_cancel(datapump);
-        pthread_join(datapump, NULL);
+        pthread_cancel(dataPumpThreadId_);
+        pthread_join(dataPumpThreadId_, NULL);
     }
     internalReset();
     if (fd != -1) {
-        pthread_create(&datapump, NULL, pump_run, this);
-        realWrite();
+        pthread_create(&dataPumpThreadId_, NULL, data_pump_thread, this);
+        flushOutputBuffer();
     }
 }
 
-void packet::
-internalReset()
-{
-    if (verbose & PKT_DEBUG_LOG)
+void DataLink::internalReset() {
+    if (verbose_ & PKT_DEBUG_LOG)
         lout << "resetting serial connection" << endl;
     if (fd != -1) {
         ser_exit(fd);
@@ -254,60 +250,39 @@ internalReset()
     lastFatal = false;
     serialStatus = -1;
     lastSYN = startPkt = -1;
-    crcIn = crcOut = 0;
-    realBaud = baud;
+    crcIn = 0;
+    baudRate_ = requestedBaudRate_;
     justStarted = true;
-    if (baud < 0) {
-        realBaud = baud_table[baud_index++];
-        if (baud_index >= BAUD_TABLE_SIZE)
-            baud_index = 0;
+    if (requestedBaudRate_ < 0) {
+        baudRate_ = kBaudRatesTable[baudRateIndex_++];
+        if (baudRateIndex_ >= BAUD_RATES_TABLE_SIZE) {
+            baudRateIndex_ = 0;
+        }
     }
-
-    fd = init_serial(devname, realBaud, 0);
-    if (verbose & PKT_DEBUG_LOG)
-        lout << "serial connection set to " << dec << realBaud
+    fd = init_serial(devname.c_str(), baudRate_, 0);
+    if (verbose_ & PKT_DEBUG_LOG)
+        lout << "serial connection set to " << dec << baudRate_
              << " baud, fd=" << fd << endl;
-    if (fd != -1)
+    if (fd != -1) {
         lastFatal = false;
+    }
 }
 
-short int packet::
-getVerbose()
-{
-    return verbose;
+int DataLink:: getSpeed() {
+    return baudRate_;
 }
 
-void packet::
-setVerbose(short int _verbose)
-{
-    verbose = pumpverbose = _verbose;
-}
-
-void packet::
-setEpoc(bool _epoc)
-{
-    isEPOC = _epoc;
-}
-
-int packet::
-getSpeed()
-{
-    return realBaud;
-}
-
-void packet::
-send(bufferStore &b)
-{
+void DataLink::send(bufferStore &b, bool isEPOC) {
     opByte(0x16);
     opByte(0x10);
     opByte(0x02);
 
-    crcOut = 0;
+    unsigned short crcOut = 0;
     long len = b.getLen();
 
-    if (verbose & PKT_DEBUG_LOG) {
+    if (verbose_ & PKT_DEBUG_LOG) {
         lout << "packet: >> ";
-        if (verbose & PKT_DEBUG_DUMP)
+        if (verbose_ & PKT_DEBUG_DUMP)
             lout << b;
         else
             lout << " len=" << dec << len;
@@ -319,49 +294,40 @@ send(bufferStore &b)
         switch (c) {
             case 0x03:
                 if (isEPOC) {
+                    // Stuff ETX as DLE EOT
                     opByte(0x10);
                     opByte(0x04);
-                    addToCrc(0x03, &crcOut);
-                } else
-                    opCByte(c, &crcOut);
+                } else {
+                    opByte(c);
+                }
                 break;
             case 0x10:
+                // Stuff DLE as DLE DLE
                 opByte(0x10);
-                // fall thru
+                opByte(0x10);
+                break;
             default:
-                opCByte(c, &crcOut);
+                opByte(c);
         }
+        addToCrc(c, &crcOut);
     }
     opByte(0x10);
     opByte(0x03);
     opByte(crcOut >> 8);
     opByte(crcOut & 0xff);
-    realWrite();
+    flushOutputBuffer();
 }
 
-void packet::
-opByte(unsigned char a)
-{
-    if (!hasSpace(out))
-        realWrite();
+void DataLink::opByte(unsigned char a) {
+    if (!hasSpace(out)) {
+        flushOutputBuffer();
+    }
     outBuffer[outWrite] = a;
     inc1(outWrite);
 }
 
-void packet::
-opCByte(unsigned char a, unsigned short *crc)
-{
-    addToCrc(a, crc);
-    if (!hasSpace(out))
-        realWrite();
-    outBuffer[outWrite] = a;
-    inc1(outWrite);
-}
-
-void packet::
-realWrite()
-{
-    pthread_kill(datapump, SIGUSR1);
+void DataLink::flushOutputBuffer() {
+    pthread_kill(dataPumpThreadId_, SIGUSR1);
     while (!hasSpace(out)) {
         sigset_t sigs;
         int dummy;
@@ -371,9 +337,7 @@ realWrite()
     }
 }
 
-void packet::
-findSync()
-{
+bool DataLink::processInputData() {
     int inw = inWrite;
     int p;
 
@@ -445,22 +409,22 @@ outerLoop:
                     startPkt = lastSYN = -1;
                     inCRCstate = 0;
                     if (receivedCRC != crcIn) {
-                        if (verbose & PKT_DEBUG_LOG)
+                        if (verbose_ & PKT_DEBUG_LOG)
                             lout << "packet: BAD CRC" << endl;
                     } else {
-                        if (verbose & PKT_DEBUG_LOG) {
+                        if (verbose_ & PKT_DEBUG_LOG) {
                             lout << "packet: << ";
-                            if (verbose & PKT_DEBUG_DUMP)
+                            if (verbose_ & PKT_DEBUG_DUMP)
                                 lout << rcv;
                             else
                                 lout << "len=" << dec << rcv.getLen();
                             lout << endl;
                         }
-                        theLINK->receive(rcv);
+                        link_->receive(rcv);
                     }
                     rcv.init();
                     if (hasData(out))
-                        return;
+                        return true;
                     goto outerLoop;
             }
             inc1(p);
@@ -476,15 +440,14 @@ outerLoop:
             int rx_amount = (inw > inRead) ?
                 inw - inRead : BUFLEN - inRead + inw;
             if (rx_amount > 15) {
-                internalReset();
+                return false;
             }
         }
     }
+    return true;
 }
 
-bool packet::
-linkFailed()
-{
+bool DataLink::linkFailed() {
     int arg;
     int res;
     bool failed = false;
@@ -495,7 +458,7 @@ linkFailed()
     if (res < 0)
         lastFatal = true;
     if ((serialStatus == -1) || (arg != serialStatus)) {
-        if (verbose & PKT_DEBUG_HANDSHAKE)
+        if (verbose_ & PKT_DEBUG_HANDSHAKE)
             lout << "packet: < DTR:" << ((arg & TIOCM_DTR)?1:0)
                  << " RTS:" << ((arg & TIOCM_RTS)?1:0)
                  << " DCD:" << ((arg & TIOCM_CAR)?1:0)
@@ -506,7 +469,7 @@ linkFailed()
             res = ioctl(fd, TIOCMSET, &arg);
             if (res < 0)
                 lastFatal = true;
-            if (verbose & PKT_DEBUG_HANDSHAKE)
+            if (verbose_ & PKT_DEBUG_HANDSHAKE)
                 lout << "packet: > DTR:" << ((arg & TIOCM_DTR)?1:0)
                      << " RTS:" << ((arg & TIOCM_RTS)?1:0)
                      << " DCD:" << ((arg & TIOCM_CAR)?1:0)
@@ -519,9 +482,9 @@ linkFailed()
     if ((arg & TIOCM_DSR) == 0) {
         failed = true;
     }
-    if ((verbose & PKT_DEBUG_LOG) && lastFatal)
+    if ((verbose_ & PKT_DEBUG_LOG) && lastFatal)
         lout << "packet: linkFATAL\n";
-    if ((verbose & PKT_DEBUG_LOG) && failed)
+    if ((verbose_ & PKT_DEBUG_LOG) && failed)
         lout << "packet: linkFAILED\n";
     return (lastFatal || failed);
 }
