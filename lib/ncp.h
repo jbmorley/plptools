@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "bufferstore.h"
-#include "linkchan.h"
+#include "linkchannel.h"
 #include "ncpstatuscallback.h"
 #include "tcpsocket.h"
 
@@ -35,7 +35,7 @@
 #define NCP_SENDLEN 250
 
 class Link;
-class channel;
+class Channel;
 
 /**
  * Representation of a server process on the PC
@@ -56,14 +56,15 @@ class NCP {
 public:
     NCP(const char *fname,
         int baud,
+        bool noDSRCheck,
         unsigned short verbose,
         const int cancellationFd,
         NCPStatusCallback statusCallback,
         void *context);
     ~NCP();
 
-    int connect(channel *c); // returns channel, or -1 if failure
-    void Register(channel *c);
+    int connect(Channel *c); // returns channel, or -1 if failure
+    void Register(Channel *c);
     void RegisterAck(int, const char *);
     void disconnect(int channel);
     void send(int channel, BufferStore &a);
@@ -105,12 +106,12 @@ private:
 
     Link *l;
     unsigned short verbose;
-    channel **channelPtr;
+    Channel **channelPtr;
     BufferStore *messageList;
     int *remoteChanList;
     bool failed = false;
     short int protocolVersion;
-    linkChan *lChan;
+    LinkChannel *lChan;
     int maxChannels;
     std::vector<PcServer> pcServers;
     int lastSentChannel;

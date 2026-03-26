@@ -13,7 +13,7 @@ public:
     bool connect(const char * const Peer, int PeerPort);
     rfsv::errs getMachineType(rpcs::machs &machineType);
     rfsv::errs getMachineInfo(rpcs::machineInfo &machineInfo);
-    rfsv::errs getOwnerInfo(bufferArray &owner);
+    rfsv::errs getOwnerInfo(BufferArray &owner);
     rfsv::errs execProgram(const char *program, const char *args);
     rfsv::errs stopPrograms();
 private:

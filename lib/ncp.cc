@@ -30,7 +30,7 @@
 #include "bufferarray.h"
 
 #include "link.h"
-#include "linkchan.h"
+#include "linkchannel.h"
 #include "ncp_log.h"
 #include "ncp.h"
 #include "ncpstatuscallback.h"
@@ -40,6 +40,7 @@ using namespace std;
 
 NCP::NCP(const char *fname,
          int baud,
+         bool noDSRCheck,
          unsigned short _verbose,
          const int cancellationFd,
          NCPStatusCallback statusCallback,
@@ -48,7 +49,7 @@ NCP::NCP(const char *fname,
 , statusCallback_(statusCallback)
 , callbackContext_(callbackContext) {
 
-    channelPtr = new channel*[MAX_CHANNELS_PSION + 1];
+    channelPtr = new Channel*[MAX_CHANNELS_PSION + 1];
     messageList = new BufferStore[MAX_CHANNELS_PSION + 1];
     remoteChanList = new int[MAX_CHANNELS_PSION + 1];
 
@@ -61,7 +62,7 @@ NCP::NCP(const char *fname,
     for (int i = 0; i < MAX_CHANNELS_PSION; i++)
         channelPtr[i] = NULL;
 
-    l = new Link(fname, baud, this, verbose, cancellationFd);
+    l = new Link(fname, baud, this, noDSRCheck, verbose, cancellationFd);
 }
 
 NCP::~NCP() {
@@ -212,9 +213,9 @@ void NCP::decodeControlMessage(BufferStore & buff) {
                 // Create linkchan if it does not yet exist
                 if (!lChan) {
                     if (verbose & NCP_DEBUG_LOG)
-                        lout << "ncp: new passive linkChan" << endl;
+                        lout << "ncp: new passive LinkChannel" << endl;
                     channelPtr[localChan] =
-                        lChan = new linkChan(this, localChan);
+                        lChan = new LinkChannel(this, localChan);
                     lChan->setVerbose(verbose);
                 }
                 lChan->ncpConnectAck();
@@ -245,9 +246,9 @@ void NCP::decodeControlMessage(BufferStore & buff) {
                 // Create linkchan if it does not yet exist
                 if (!lChan) {
                     if (verbose & NCP_DEBUG_LOG)
-                        lout << "ncp: new active linkChan" << endl;
+                        lout << "ncp: new active LinkChannel" << endl;
                     channelPtr[localChan] =
-                        lChan = new linkChan(this, -1);
+                        lChan = new LinkChannel(this, -1);
                     lChan->setVerbose(verbose);
                 }
 
@@ -348,7 +349,7 @@ int NCP::getFirstUnusedChan() {
         if (channelPtr[cNum] == NULL) {
             if (verbose & NCP_DEBUG_LOG)
                 lout << "ncp: getFirstUnusedChan=" << cNum << endl;
-            channelPtr[cNum] = (channel *)0xdeadbeef;
+            channelPtr[cNum] = (Channel *)0xdeadbeef;
             return cNum;
         }
     }
@@ -363,7 +364,7 @@ void NCP::RegisterAck(int chan, const char *name) {
     if (verbose & NCP_DEBUG_LOG)
         lout << "ncp: RegisterAck: chan=" << chan << endl;
     for (int cNum = 1; cNum < maxLinks(); cNum++) {
-        channel *ch = channelPtr[cNum];
+        Channel *ch = channelPtr[cNum];
         if (isValidChannel(cNum) && ch->getNcpChannel() == chan) {
             ch->setNcpConnectName(name);
             ch->ncpRegisterAck();
@@ -373,7 +374,7 @@ void NCP::RegisterAck(int chan, const char *name) {
     lerr << "ncp: RegisterAck: no channel to deliver" << endl;
 }
 
-void NCP::Register(channel * ch) {
+void NCP::Register(Channel * ch) {
     if (lChan) {
         int cNum = ch->getNcpChannel();
         if (cNum == 0)
@@ -388,7 +389,7 @@ void NCP::Register(channel * ch) {
         lerr << "ncp: Register without established lChan" << endl;
 }
 
-int NCP::connect(channel * ch) {
+int NCP::connect(Channel *ch) {
     // look for first unused chan
 
     int cNum = ch->getNcpChannel();

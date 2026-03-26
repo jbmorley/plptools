@@ -4,6 +4,7 @@
 #
 # Copyright (C) 1999-2002 Fritz Elfert <felfert@to.com>
 # Copyright (C) 2007-2024 Reuben Thomas <rrt@sc3d.org>
+# Copyright (C) 2026 Jason Morley <hello@jbmorley.co.uk>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -24,15 +25,86 @@ LDADD = $(HOSTENT_LIB) $(LIBSOCKET)
 
 pkglib_LTLIBRARIES = libplp.la
 
-libplp_la_SOURCES = bufferarray.cc  bufferstore.cc iowatch.cc tcpsocket.cc \
-	rfsv16.cc rfsv32.cc rfsvfactory.cc log.cc rfsv.cc rpcs32.cc rpcs16.cc \
-	rpcs.cc rpcsfactory.cc psitime.cc Enum.cc plpdirent.cc wprt.cc \
-	rclip.cc siscomponentrecord.cpp  sisfile.cpp sisfileheader.cpp \
-	sisfilerecord.cpp sislangrecord.cpp sisreqrecord.cpp sistypes.cpp \
-	psibitmap.cpp psiprocess.cc path.cc cli_utils.cc
-noinst_HEADERS = bufferarray.h bufferstore.h iowatch.h tcpsocket.h \
-	rfsv.h rfsv16.h rfsv32.h rfsvfactory.h log.h rpcs32.h rpcs16.h rpcs.h \
-	rpcsfactory.h psitime.h Enum.h plpdirent.h wprt.h plpintl.h rclip.h \
-	siscomponentrecord.h sisfile.h sisfileheader.h sisfilerecord.h \
-	sislangrecord.h sisreqrecord.h sistypes.h psibitmap.h psiprocess.h \
-	path.h cli_utils.h
+libplp_la_LIBADD = $(INTLLIBS) $(LIBPMULTITHREAD) $(LIBTHREAD) $(NANOSLEEP_LIB) $(PTHREAD_SIGMASK_LIB) $(SELECT_LIB) $(top_builddir)/libgnu/libgnu.la
+
+libplp_la_SOURCES = \
+	bufferarray.cc \
+	bufferstore.cc \
+	channel.cc \
+	cli_utils.cc \
+	datalink.cc \
+	Enum.cc \
+	iowatch.cc \
+	link.cc \
+	linkchannel.cc \
+	log.cc \
+	mp_serial.c \
+	ncp_log.cc \
+	ncp_session.cc \
+	ncp.cc \
+	path.cc \
+	plpdirent.cc \
+	psibitmap.cpp \
+	psiprocess.cc \
+	psitime.cc \
+	rclip.cc \
+	rfsv.cc \
+	rfsv16.cc \
+	rfsv32.cc \
+	rfsvfactory.cc \
+	rpcs.cc \
+	rpcs16.cc \
+	rpcs32.cc \
+	rpcsfactory.cc \
+	siscomponentrecord.cpp  \
+	sisfile.cpp \
+	sisfileheader.cpp \
+	sisfilerecord.cpp \
+	sislangrecord.cpp \
+	sisreqrecord.cpp \
+	sistypes.cpp \
+	socketchannel.cc \
+	tcpsocket.cc \
+	wprt.cc
+
+noinst_HEADERS = \
+	bufferarray.h \
+	bufferstore.h \
+	channel.h \
+	cli_utils.h \
+	datalink.h \
+	Enum.h \
+	iowatch.h \
+	link.h  \
+	linkchannel.h \
+	log.h \
+	mp_serial.h \
+	ncp_log.h \
+	ncp_session.h \
+	ncp.h \
+	ncpstatuscallback.h \
+	path.h \
+	plpdirent.h \
+	plpintl.h \
+	psibitmap.h \
+	psiprocess.h \
+	psitime.h \
+	rclip.h \
+	rfsv.h \
+	rfsv16.h \
+	rfsv32.h \
+	rfsvfactory.h \
+	rpcs.h \
+	rpcs16.h \
+	rpcs32.h \
+	rpcsfactory.h \
+	siscomponentrecord.h \
+	sisfile.h \
+	sisfileheader.h \
+	sisfilerecord.h \
+	sislangrecord.h \
+	sisreqrecord.h \
+	sistypes.h \
+	socketchannel.h \
+	tcpsocket.h \
+	wprt.h

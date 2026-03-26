@@ -51,7 +51,7 @@ rfsv::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
     return _rpcs->getMachineInfo(machineInfo);
 }
 
-rfsv::errs RPCSClient::getOwnerInfo(bufferArray &owner) {
+rfsv::errs RPCSClient::getOwnerInfo(BufferArray &owner) {
     assert(_rpcs);
     return _rpcs->getOwnerInfo(owner);
 }

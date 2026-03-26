@@ -9,7 +9,7 @@ void *ncp_session_init(int sockNum,
                        unsigned short nverbose,
                        NCPStatusCallback statusCallback,
                        void *callbackContext) {
-    return new NCPSession(sockNum, baudRate, host, serialDevice, autoexit, nverbose, statusCallback, callbackContext);
+    return new NCPSession(sockNum, baudRate, host, serialDevice, autoexit, false, nverbose, statusCallback, callbackContext);
 }
 
 void ncp_session_start(void *session) {

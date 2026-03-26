@@ -18,35 +18,28 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#pragma once
+#ifndef _linkchan_h_
+#define _linkchan_h_
 
-#include "config.h"
 #include "channel.h"
+#include "bufferarray.h"
 
-class TCPSocket;
+#define LINKCHAN_DEBUG_LOG  1
+#define LINKCHAN_DEBUG_DUMP 2
 
-class SocketChannel : public channel {
+class LinkChannel : public Channel {
 public:
-  SocketChannel(TCPSocket* socket, NCP* ncp);
-  virtual ~SocketChannel();
+    LinkChannel(NCP *ncpController, int ncpChannel = -1);
 
-  void ncpDataCallback(BufferStore& a);
-  const char* getNcpRegisterName();
-  void ncpConnectAck();
-  void ncpRegisterAck();
-  void ncpDoRegisterAck(int) {}
-  void ncpConnectTerminate();
-  void ncpConnectNak();
-
-  bool isConnected() const;
-  void socketPoll();
+    void ncpDataCallback(BufferStore &a);
+    const char *getNcpRegisterName();
+    void ncpConnectAck();
+    void ncpConnectTerminate();
+    void ncpConnectNak();
+    void ncpRegisterAck() {}
+    void Register(Channel *);
 private:
-  enum protocolVersionType { PV_SERIES_5 = 6, PV_SERIES_3 = 3 };
-  bool ncpCommand(BufferStore &a);
-
-  TCPSocket* socket_;
-  char* registerName_;
-  bool isConnected_;
-  int connectTry_;
-  int connectTryTimestamp_;
+    int registerSer;
+    BufferArray registerStack;
 };
+#endif

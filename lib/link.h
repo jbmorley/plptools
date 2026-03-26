@@ -18,8 +18,7 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#ifndef _link_h_
-#define _link_h_
+#pragma once
 
 #include "config.h"
 #include <pthread.h>
@@ -54,7 +53,7 @@ typedef struct {
      * Packet content.
      */
     BufferStore data;
-} ackWaitQueueElement;
+} AckWaitQueueElement;
 
 extern "C" {
     static void *expire_check(void *);
@@ -75,10 +74,11 @@ public:
      * @param fname Name of serial device.
      * @param baud Speed of serial device.
      * @param ncp The calling NCP instance.
+     * @param noDSRCheck Disable checking DSR (for buggy serial drivers)
      * @param verbose Verbosity (for debugging/troubleshooting)
      * @param cancellationFd File descriptor that can be used to signal that the `Link` should shutdown.
      */
-    Link(const char *fname, int baud, NCP *ncp, unsigned short verbose, const int cancellationFd);
+    Link(const char *fname, int baud, NCP *ncp, bool noDSRCheck, unsigned short verbose, const int cancellationFd);
 
     /**
      * Disconnects from device and destroys instance.
@@ -114,11 +114,6 @@ public:
     void reset();
 
     /**
-     * Wait, until all outstanding packets are acknowledged or timed out.
-     */
-    void flush();
-
-    /**
      * Purge all outstanding packets for a specified remote channel.
      *
      * @param channel The of the channel for which to remove outstanding
@@ -151,10 +146,10 @@ private:
     */
     void receive(BufferStore buf);
     void transmit(BufferStore buf);
-    void sendAck(int seq);
+    void sendAck(int seq, Enum<link_type> linkType);
     void sendReqReq();
     void sendReqCon();
-    void sendReq();
+    void sendReq(Enum<link_type> linkType);
     void multiAck(struct timeval);
     void retransmit();
     void transmitHoldQueue(int channel);
@@ -162,25 +157,29 @@ private:
     void purgeAllQueues();
     unsigned long retransTimeout();
 
-    pthread_t checkthread;
-    pthread_mutex_t queueMutex;
+    pthread_t checkThreadId_;
+    pthread_mutex_t queueMutex_;
 
-    NCP *theNCP;
+    NCP * const ncp_;
     DataLink *dataLink_ = nullptr;
-    bool isEPOC_ = false;
-    int txSequence;
-    int rxSequence;
-    int seqMask;
-    int maxOutstanding;
-    unsigned long conMagic;
-    unsigned short verbose;
-    bool failed;
-    Enum<link_type> linkType;
+    int txSequence_ = 1;
+    int rxSequence_ = -1;
+    int seqMask_ = 7;
+    int maxOutstanding_ = 1;
+    unsigned long conMagic_;
+    const unsigned short verbose_;
+    bool failed_;
+    Enum<link_type> linkType_;
 
-    std::vector<ackWaitQueueElement> ackWaitQueue;
-    std::vector<BufferStore> holdQueue;
-    std::vector<BufferStore> waitQueue;
-    bool xoff[256];
+    std::vector<AckWaitQueueElement> ackWaitQueue;
+    std::vector<BufferStore> holdQueue_;
+    std::vector<BufferStore> waitQueue_;
+    bool xoff_[256];
+
+    /**
+    * Used to signal cancellation.
+    *
+    * Should never be read.
+    */
+    const int cancellationFd_;
 };
-
-#endif
