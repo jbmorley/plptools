@@ -4,6 +4,7 @@ Makefile.in
 Makefile
 .deps
 .libs
+/.build
 /.cache
 /ABOUT-NLS
 /aclocal.m4
