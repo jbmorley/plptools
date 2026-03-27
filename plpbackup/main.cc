@@ -244,7 +244,7 @@ int main(int argc, char **argv) {
             continue;
         }
         std::string letter;
-        letter += drive.getDrivechar();
+        letter += drive.getDriveLetter();
         std::string drivePath = Path::appending_component(backupPath, letter);
         if (mkdir(drivePath.c_str(), 0755) != 0) {
             cout << "Failed to create directory '" << drivePath << "'." << endl;
