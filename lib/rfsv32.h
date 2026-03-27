@@ -79,11 +79,12 @@ public:
 
 private:
 
+    // TODO: Share this??
     enum file_attrib {
         EPOC_ATTR_RONLY      = 0x0001,
         EPOC_ATTR_HIDDEN     = 0x0002,
         EPOC_ATTR_SYSTEM     = 0x0004,
-        EPOC_ATTR_DIRECTORY  = 0x0010,
+        EPOC_ATTR_DIRECTORY  = 0x0010, // I think this is wrong.
         EPOC_ATTR_ARCHIVE    = 0x0020,
         EPOC_ATTR_VOLUME     = 0x0040,
         EPOC_ATTR_NORMAL     = 0x0080,

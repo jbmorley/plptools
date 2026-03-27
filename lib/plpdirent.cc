@@ -18,6 +18,7 @@
  *
  */
 #include "config.h"
+#include "rfsv.h"
 
 #include "plpdirent.h"
 
@@ -63,14 +64,16 @@ PlpDirent::PlpDirent(const uint32_t _size, const uint32_t _attr,
     attrstr = "";
 }
 
-uint32_t PlpDirent::
-getSize() {
+uint32_t PlpDirent::getSize() const {
     return size;
 }
 
-uint32_t PlpDirent::
-getAttr() {
+uint32_t PlpDirent::getAttr() const {
     return attr;
+}
+
+bool PlpDirent::isDirectory() const {
+    return (attr & 0x0008) > 0;
 }
 
 uint32_t PlpDirent::
@@ -85,8 +88,7 @@ getUID() {
     return UID;
 }
 
-const char *PlpDirent::
-getName() {
+const char *PlpDirent::getName() const {
     return name.c_str();
 }
 
@@ -125,7 +127,15 @@ operator<<(ostream &o, const PlpDirent &e) {
 PlpDrive::PlpDrive() {
 }
 
-PlpDrive::PlpDrive(const PlpDrive &other) {
+PlpDrive::PlpDrive(const PlpDrive &other)
+: mediatype(other.mediatype)
+, driveattr(other.driveattr)
+, mediaattr(other.mediaattr)
+, uid(other.uid)
+, size(other.size)
+, space(other.space)
+, drivechar(other.drivechar)
+, name(other.name) {
 }
 
 void PlpDrive::
@@ -165,8 +175,7 @@ setName(char drive, const char * const volname) {
     name += volname;
 }
 
-uint32_t PlpDrive::
-getMediaType() {
+uint32_t PlpDrive::getMediaType() const {
     return mediatype;
 }
 
@@ -182,13 +191,11 @@ static const char * const media_types[] = {
     N_("Remote"),
 };
 
-void PlpDrive::
-getMediaType(std::string &ret) {
+void PlpDrive::getMediaType(std::string &ret) const {
     ret = media_types[mediatype];
 }
 
-uint32_t PlpDrive::
-getDriveAttribute() {
+uint32_t PlpDrive::getDriveAttribute() {
     return driveattr;
 }
 
@@ -216,13 +223,11 @@ getDriveAttribute(std::string &ret) {
         appendWithDelim(ret, _("removable"));
 }
 
-uint32_t PlpDrive::
-getMediaAttribute() {
+uint32_t PlpDrive::getMediaAttribute() {
     return mediaattr;
 }
 
-void PlpDrive::
-getMediaAttribute(std::string &ret) {
+void PlpDrive::getMediaAttribute(std::string &ret) {
     ret = "";
 
     if (mediaattr & 1)
@@ -235,27 +240,29 @@ getMediaAttribute(std::string &ret) {
         appendWithDelim(ret, _("write protected"));
 }
 
-uint32_t PlpDrive::
-getUID() {
+uint32_t PlpDrive::getUID() {
     return uid;
 }
 
-uint64_t PlpDrive::
-getSize() {
+uint64_t PlpDrive::getSize() {
     return size;
 }
 
-uint64_t PlpDrive::
-getSpace() {
+uint64_t PlpDrive::getSpace() {
     return space;
 }
 
-string PlpDrive::
-getName() {
+string PlpDrive::getName() const {
     return name;
 }
 
-char PlpDrive::
-getDrivechar() {
+char PlpDrive::getDrivechar() const {
     return drivechar;
+}
+
+std::string PlpDrive::getPath() const {
+    std::string path;
+    path += drivechar;
+    path += ":\\";
+    return path;
 }

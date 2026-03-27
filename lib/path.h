@@ -26,6 +26,7 @@
 #include "config.h"
 
 #include <string>
+#include <vector>
 
 /**
 * Conveniences for working with paths.
@@ -48,11 +49,21 @@ public:
     */
     static char *getEPOCDirname(const char *path);
 
+    static std::string get_cwd();
+
     /**
     * Returns a new absolute EPOC path, determined by resolving `path` relative to `initialPath`.
     *
     * If `path` is already an absolute path, this returns `path`.
     */
     static char *resolveEPOCPath(const char *path, const char *initialPath);
+
+    static std::vector<std::string> split(std::string string, std::string separator);
+
+    static std::string appending_components(const std::string &path, const std::vector<std::string> &components);
+
+    static std::string appending_component(const std::string &path, const std::string component);
+
+    static std::string ensuring_trailing_separator(const std::string &path, const char separator);
 
 };

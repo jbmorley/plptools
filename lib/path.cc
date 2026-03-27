@@ -27,6 +27,8 @@
 
 #include "xalloc.h"
 #include "xvasprintf.h"
+#include <string>
+#include <unistd.h>
 
 std::string Path::getEPOCBasename(std::string path) {
     size_t end = path.find_last_of("\\");
@@ -61,6 +63,16 @@ char *Path::getEPOCDirname(const char *path) {
     return f1;
 }
 
+// TODO: This isn't safe.
+std::string Path::get_cwd() {
+    char buf[PATH_MAX];
+    std::string cwd;
+    if (getcwd(buf, sizeof(buf))) {
+        cwd = buf;
+    }
+    return cwd;
+}
+
 char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
     char *f1;
 
@@ -85,4 +97,39 @@ char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
     }
 
     return f1;
+}
+
+std::vector<std::string> Path::split(std::string string, std::string separator) {
+    std::vector<std::string> result;
+    size_t offset = 0;
+    size_t index = 0;
+    while ((index = string.find(separator, offset)) != std::string::npos) {
+        result.push_back(string.substr(offset, index-offset));
+        offset = index + 1;
+    }
+    if (offset - string.length() > 0) {
+        result.push_back(string.substr(offset));
+    }
+    return result;
+}
+
+std::string Path::appending_components(const std::string &path, const std::vector<std::string> &components) {
+    std::string result = path;
+    for (const auto &component : components) {
+        result += "/";
+        result += component;
+    }
+    return result;
+}
+
+std::string Path::appending_component(const std::string &path, const std::string component) {
+    return appending_components(path, {component});
+}
+
+std::string Path::ensuring_trailing_separator(const std::string &path, const char separator) {
+    if (!path.empty() && path.back() == separator) {
+        return path;
+    }
+    std::string result = path;
+    return result + separator;
 }

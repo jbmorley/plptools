@@ -196,6 +196,7 @@ AC_CONFIG_FILES(
         lib/Makefile
         libgnu/Makefile
         ncpd/Makefile
+        plpbackup/Makefile
         plpftp/Makefile
         plpfuse/Makefile
         plpprint/Makefile

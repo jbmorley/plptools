@@ -20,6 +20,7 @@
 #ifndef _PLPDIRENT_H_
 #define _PLPDIRENT_H_
 
+#include <cstdint>
 #include <iostream>
 #include <string>
 #include <cstring>
@@ -109,14 +110,16 @@ public:
     *
     * @returns The file size in bytes.
     */
-    uint32_t getSize();
+    uint32_t getSize() const;
 
     /**
     * Retrieves the file attributes of a directory entry.
     *
     * @returns The generic attributes ( @ref rfsv::file_attribs ).
     */
-    uint32_t getAttr();
+    uint32_t getAttr() const;
+
+    bool isDirectory() const;
 
     /**
     * Retrieves the UIDs of a directory entry.
@@ -140,7 +143,7 @@ public:
     *
     * @returns The name of the file.
     */
-    const char *getName();
+    const char * getName() const;
 
     /**
     * Retrieve the modification time of a directory entry.
@@ -183,6 +186,19 @@ private:
     PsiTime time;
     std::string  attrstr;
     std::string  name;
+};
+
+
+enum class MediaType: uint32_t {
+    kNotPresent = 0,
+    kUnknown = 1,
+    kFloppy = 2,
+    kDisk = 3,
+    kCompactDisc = 4,
+    kRAM = 5,
+    kFlashDisk = 6,
+    kROM = 7,
+    kRemote = 8,
 };
 
 /**
@@ -228,7 +244,7 @@ public:
     *   8 = Remote
     * </pre>
     */
-    uint32_t getMediaType();
+    uint32_t getMediaType() const;  // Return an ENUM?
 
     /**
     * Retrieve the media type of the drive.
@@ -237,7 +253,7 @@ public:
     *
     * @param ret The string is returned here.
     */
-    void getMediaType(std::string &ret);
+    void getMediaType(std::string &ret) const;
 
     /**
     * Retrieve the attributes of the drive.
@@ -321,14 +337,16 @@ public:
     *
     * returns The volume name of the drive.
     */
-    std::string getName();
+    std::string getName() const;
 
     /**
     * Retrieve the drive letter of the drive.
     *
     * returns The letter of the probed drive.
     */
-    char getDrivechar();
+    char getDrivechar() const;
+
+    std::string getPath() const;
 
 private:
     void setMediaType(uint32_t type);
