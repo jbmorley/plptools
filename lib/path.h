@@ -37,6 +37,9 @@
 class Path {
 public:
 
+    static constexpr char kEPOCSeparator = '\\';
+    static constexpr char kHostSeparator = '/';
+
     /**
     * Returns the last path component of an EPOC path.
     *
@@ -58,12 +61,17 @@ public:
     */
     static char *resolveEPOCPath(const char *path, const char *initialPath);
 
-    static std::vector<std::string> split(std::string string, std::string separator);
+    static std::vector<std::string> split(const std::string string,
+                                          const char separator = kHostSeparator);
 
-    static std::string appending_components(const std::string &path, const std::vector<std::string> &components);
+    static std::string appending_components(const std::string &path,
+                                            const std::vector<std::string> &components, const char separator = kHostSeparator);
 
-    static std::string appending_component(const std::string &path, const std::string component);
+    static std::string appending_component(const std::string &path,
+                                           const std::string component,
+                                           const char separator = kHostSeparator);
 
-    static std::string ensuring_trailing_separator(const std::string &path, const char separator);
+    static std::string ensuring_trailing_separator(const std::string &path,
+                                                   const char separator = kHostSeparator);
 
 };

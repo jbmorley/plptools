@@ -113,20 +113,25 @@ std::vector<std::string> Path::split(std::string string, std::string separator) 
     return result;
 }
 
-std::string Path::appending_components(const std::string &path, const std::vector<std::string> &components) {
+std::string Path::appending_components(const std::string &path,
+                                       const std::vector<std::string> &components,
+                                       const char separator) {
     std::string result = path;
     for (const auto &component : components) {
-        result += "/";
+        result += separator;
         result += component;
     }
     return result;
 }
 
-std::string Path::appending_component(const std::string &path, const std::string component) {
-    return appending_components(path, {component});
+std::string Path::appending_component(const std::string &path,
+                                      const std::string component,
+                                      const char separator) {
+    return appending_components(path, {component}, separator);
 }
 
-std::string Path::ensuring_trailing_separator(const std::string &path, const char separator) {
+std::string Path::ensuring_trailing_separator(const std::string &path,
+                                              const char separator) {
     if (!path.empty() && path.back() == separator) {
         return path;
     }
