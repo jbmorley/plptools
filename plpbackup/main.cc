@@ -118,10 +118,10 @@ std::vector<char> map_devices(uint32_t deviceBits) {
     return result;
 }
 
-std::vector<QualifiedDirectoryEntry> dir(rfsv *_rfsv, const std::string &path, bool recursive) {
+std::vector<QualifiedDirectoryEntry> dir(RFSV *rfsv, const std::string &path, bool recursive) {
     std::vector<QualifiedDirectoryEntry> files;
     PlpDir entries;
-    _rfsv->dir(path.c_str(), entries);  // TODO: Check errors.
+    rfsv->dir(path.c_str(), entries);  // TODO: Check errors.
     for (PlpDirent entry: entries) {
         files.push_back(QualifiedDirectoryEntry{path, entry});
     }
@@ -134,19 +134,19 @@ std::vector<QualifiedDirectoryEntry> dir(rfsv *_rfsv, const std::string &path, b
         if (!file.directoryEntry_.isDirectory()) {
             continue;
         }
-        std::vector<QualifiedDirectoryEntry> contents = dir(_rfsv, file.path(), recursive);
+        std::vector<QualifiedDirectoryEntry> contents = dir(rfsv, file.path(), recursive);
         result.insert(result.end(), contents.begin(), contents.end());
     }
     return result;
 }
 
-Enum<rfsv::errs> listDrives(rfsv *_rfsv, std::vector<PlpDrive> &_drives) {
-    Enum<rfsv::errs> result;
+Enum<RFSV::errs> listDrives(RFSV *rfsv, std::vector<PlpDrive> &_drives) {
+    Enum<RFSV::errs> result;
 
     // Get the supported drive letters.
     uint32_t deviceBits = 0;
-    result = _rfsv->devlist(deviceBits);
-    if (result != rfsv::E_PSI_GEN_NONE) {
+    result = rfsv->devlist(deviceBits);
+    if (result != RFSV::E_PSI_GEN_NONE) {
         return result;
     }
     auto devices = map_devices(deviceBits);
@@ -155,18 +155,18 @@ Enum<rfsv::errs> listDrives(rfsv *_rfsv, std::vector<PlpDrive> &_drives) {
     std::vector<PlpDrive> drives;
     for (const auto &device : devices) {
         PlpDrive driveInfo;
-        result = _rfsv->devinfo(device, driveInfo);
-        if (result == rfsv::E_PSI_FILE_NOTREADY) {
+        result = rfsv->devinfo(device, driveInfo);
+        if (result == RFSV::E_PSI_FILE_NOTREADY) {
             // Ignore drives that aren't available.
             continue;
         }
-        if (result != rfsv::E_PSI_GEN_NONE) {
+        if (result != RFSV::E_PSI_GEN_NONE) {
             return result;
         }
         drives.push_back(driveInfo);
     }
     _drives = drives;
-    return rfsv::errs::E_PSI_GEN_NONE;
+    return RFSV::E_PSI_GEN_NONE;
 }
 
 int main(int argc, char **argv) {
@@ -217,11 +217,11 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     rfsvfactory *rf = new rfsvfactory(skt);
-    rfsv *fs = rf->create(false);
+    RFSV *fs = rf->create(false);
 
     cout << "Listing drives..." << endl;
     std::vector<PlpDrive> drives;
-    if (listDrives(fs, drives) != rfsv::E_PSI_GEN_NONE) {
+    if (listDrives(fs, drives) != RFSV::E_PSI_GEN_NONE) {
         cout << "Failed to list drives." << endl;
         return EXIT_FAILURE;
     }
@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
     for (const QualifiedDirectoryEntry &file : files) {
 
         // Determine the destination path.
-        std::vector<std::string> components = Path::split(file.path(), "\\");
+        std::vector<std::string> components = Path::split(file.path(), '\\');
         auto drive = components[0][0];
         components[0] = drive;
         // components.erase(components.begin());  // Drop the drive.

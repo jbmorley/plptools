@@ -99,7 +99,8 @@ char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
     return f1;
 }
 
-std::vector<std::string> Path::split(std::string string, std::string separator) {
+std::vector<std::string> Path::split(const std::string string,
+                                     const char separator) {
     std::vector<std::string> result;
     size_t offset = 0;
     size_t index = 0;
