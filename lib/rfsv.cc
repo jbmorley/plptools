@@ -209,26 +209,23 @@ Enum<RFSV::errs> RFSV::dir(const std::string &path,
     return RFSV::E_PSI_GEN_NONE;
 }
 
-std::vector<char> map_devices(uint32_t deviceBits) {
-    std::vector<char> result;
-    for (int i = 0; i < 26; i++) {
-        if (deviceBits & (1 << i)) {
-            result.push_back('A' + i);
-        }
-    }
-    return result;
-}
-
 Enum<RFSV::errs> RFSV::drives(std::vector<PlpDrive> &drives) {
     Enum<RFSV::errs> result;
 
-    // Get the supported drive letters.
+    // Get the supported drives.
     uint32_t deviceBits = 0;
     result = devlist(deviceBits);
     if (result != RFSV::E_PSI_GEN_NONE) {
         return result;
     }
-    auto devices = map_devices(deviceBits);
+
+    // Convert them to drive letters.
+    std::vector<char> devices;
+    for (int i = 0; i < 26; i++) {
+        if (deviceBits & (1 << i)) {
+            devices.push_back('A' + i);
+        }
+    }
 
     // Iterate over the devices and get the info for the available drives.
     for (const auto &device : devices) {
