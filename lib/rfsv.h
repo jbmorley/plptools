@@ -32,6 +32,7 @@ typedef std::deque<class PlpDirent> PlpDir;
 
 class TCPSocket;
 class PlpDrive;
+class QualifiedDirectoryEntry;
 
 inline const int RFSV_SENDLEN = 2000;
 
@@ -293,6 +294,10 @@ public:
     */
     virtual Enum<errs> dir(const char * const name, PlpDir &ret) = 0;
 
+    Enum<errs> dir(const std::string &path,
+                   bool recursive,
+                   std::vector<QualifiedDirectoryEntry> &files);
+
     /**
     * Retrieves the modification time of a file on the Psion.
     *
@@ -390,6 +395,8 @@ public:
     * @returns A Psion error code (One of enum @ref #errs ).
     */
     virtual Enum<errs> devinfo(const char drive, PlpDrive &dinfo) = 0;
+
+    Enum<errs> drives(std::vector<PlpDrive> &drives);
 
     /**
     * Reads from a file on the Psion.

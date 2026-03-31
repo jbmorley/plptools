@@ -360,4 +360,13 @@ private:
     std::string name_;
 };
 
+class QualifiedDirectoryEntry {
+public:
+
+    std::string parentPath_;
+    PlpDirent directoryEntry_;
+
+    std::string path() const;
+};
+
 #endif

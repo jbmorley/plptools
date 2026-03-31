@@ -22,6 +22,7 @@
 #include "config.h"
 
 #include "rfsv.h"
+#include "plpdirent.h"
 #include "tcpsocket.h"
 #include "bufferstore.h"
 #include "Enum.h"
@@ -114,8 +115,7 @@ RFSV::~RFSV() {
     skt->closeSocket();
 }
 
-void RFSV::reconnect(void)
-{
+void RFSV::reconnect(void) {
     skt->reconnect();
     serNum = 0;
     reset();
@@ -137,18 +137,14 @@ Enum<RFSV::errs> RFSV::getStatus(void) {
     return status;
 }
 
-string RFSV::
-convertSlash(const string &name)
-{
+string RFSV::convertSlash(const string &name) {
     string tmp = "";
     for (const char *p = name.c_str(); *p; p++)
         tmp += (*p == '/') ? '\\' : *p;
     return tmp;
 }
 
-string RFSV::
-attr2String(const uint32_t attr)
-{
+string RFSV::attr2String(const uint32_t attr) {
     string tmp = "";
     tmp += ((attr & PSI_A_DIR) ? 'd' : '-');
     tmp += ((attr & PSI_A_READ) ? 'r' : '-');
@@ -169,9 +165,7 @@ attr2String(const uint32_t attr)
     return tmp;
 }
 
-int RFSV::
-getSpeed()
-{
+int RFSV::getSpeed() {
     BufferStore a;
     a.addStringT("NCP$GSPD");
     if (!skt->sendBufferStore(a))
@@ -183,4 +177,71 @@ getSpeed()
     if (a.getByte(0) != E_PSI_GEN_NONE)
         return -1;
     return a.getDWord(1);
+}
+
+Enum<RFSV::errs> RFSV::dir(const std::string &path,
+                           bool recursive,
+                           std::vector<QualifiedDirectoryEntry> &_files)  {
+    Enum<RFSV::errs> result;
+
+    // List the top level directory.
+    PlpDir entries;
+    result = dir(path.c_str(), entries);
+    if (result != RFSV::E_PSI_GEN_NONE) {
+        return result;
+    }
+
+    // List the inner directories.
+    std::vector<QualifiedDirectoryEntry> files;
+    for (PlpDirent entry: entries) {
+        QualifiedDirectoryEntry qualifiedDirectoryEntry({path, entry});
+        files.push_back(qualifiedDirectoryEntry);
+        if (recursive && qualifiedDirectoryEntry.directoryEntry_.isDirectory()) {
+            std::vector<QualifiedDirectoryEntry> directoryFiles;
+            result = dir(qualifiedDirectoryEntry.path(), recursive, directoryFiles);
+            if (result != RFSV::E_PSI_GEN_NONE) {
+                return result;
+            }
+            files.insert(files.end(), directoryFiles.begin(), directoryFiles.end());
+        }
+    }
+    _files = files;
+    return RFSV::E_PSI_GEN_NONE;
+}
+
+std::vector<char> map_devices(uint32_t deviceBits) {
+    std::vector<char> result;
+    for (int i = 0; i < 26; i++) {
+        if (deviceBits & (1 << i)) {
+            result.push_back('A' + i);
+        }
+    }
+    return result;
+}
+
+Enum<RFSV::errs> RFSV::drives(std::vector<PlpDrive> &drives) {
+    Enum<RFSV::errs> result;
+
+    // Get the supported drive letters.
+    uint32_t deviceBits = 0;
+    result = devlist(deviceBits);
+    if (result != RFSV::E_PSI_GEN_NONE) {
+        return result;
+    }
+    auto devices = map_devices(deviceBits);
+
+    // Iterate over the devices and get the info for the available drives.
+    for (const auto &device : devices) {
+        PlpDrive driveInfo;
+        result = devinfo(device, driveInfo);
+        if (result == RFSV::E_PSI_FILE_NOTREADY) {
+            // Ignore drives that aren't available.
+            continue;
+        }
+        if (result != RFSV::E_PSI_GEN_NONE) {
+            return result;
+        }
+        drives.push_back(driveInfo);
+    }
+    return RFSV::E_PSI_GEN_NONE;
 }

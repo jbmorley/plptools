@@ -85,21 +85,6 @@ void backupHeader() {
     cout << _("plpbackup ") << VERSION << endl;
 }
 
-struct QualifiedDirectoryEntry {
-
-    std::string parentPath_;
-    PlpDirent directoryEntry_;
-
-    std::string path() const {
-        if (directoryEntry_.isDirectory()) {
-            return parentPath_ + directoryEntry_.getName() + "\\";
-        } else {
-            return parentPath_ + directoryEntry_.getName();
-        }
-    }
-
-};
-
 struct ProgressCallbackContext {
 
     std::string path_;
@@ -107,67 +92,6 @@ struct ProgressCallbackContext {
     size_t completedSize_;
 
 };
-
-std::vector<char> map_devices(uint32_t deviceBits) {
-    std::vector<char> result;
-    for (int i = 0; i < 26; i++) {
-        if (deviceBits & (1 << i)) {
-            result.push_back('A' + i);
-        }
-    }
-    return result;
-}
-
-std::vector<QualifiedDirectoryEntry> dir(RFSV *rfsv, const std::string &path, bool recursive) {
-    std::vector<QualifiedDirectoryEntry> files;
-    PlpDir entries;
-    rfsv->dir(path.c_str(), entries);  // TODO: Check errors.
-    for (PlpDirent entry: entries) {
-        files.push_back(QualifiedDirectoryEntry{path, entry});
-    }
-    if (!recursive) {
-        return files;
-    }
-    std::vector<QualifiedDirectoryEntry> result;
-    for(const QualifiedDirectoryEntry &file : files) {
-        result.push_back(file);
-        if (!file.directoryEntry_.isDirectory()) {
-            continue;
-        }
-        std::vector<QualifiedDirectoryEntry> contents = dir(rfsv, file.path(), recursive);
-        result.insert(result.end(), contents.begin(), contents.end());
-    }
-    return result;
-}
-
-Enum<RFSV::errs> listDrives(RFSV *rfsv, std::vector<PlpDrive> &_drives) {
-    Enum<RFSV::errs> result;
-
-    // Get the supported drive letters.
-    uint32_t deviceBits = 0;
-    result = rfsv->devlist(deviceBits);
-    if (result != RFSV::E_PSI_GEN_NONE) {
-        return result;
-    }
-    auto devices = map_devices(deviceBits);
-
-    // Iterate over the devices and get the info for the available drives.
-    std::vector<PlpDrive> drives;
-    for (const auto &device : devices) {
-        PlpDrive driveInfo;
-        result = rfsv->devinfo(device, driveInfo);
-        if (result == RFSV::E_PSI_FILE_NOTREADY) {
-            // Ignore drives that aren't available.
-            continue;
-        }
-        if (result != RFSV::E_PSI_GEN_NONE) {
-            return result;
-        }
-        drives.push_back(driveInfo);
-    }
-    _drives = drives;
-    return RFSV::E_PSI_GEN_NONE;
-}
 
 int main(int argc, char **argv) {
 
@@ -217,15 +141,27 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     rfsvfactory *rf = new rfsvfactory(skt);
-    RFSV *fs = rf->create(false);
+    RFSV *rfsv = rf->create(false);
 
+    // List the available drives, excluding ROM drives.
     cout << "Listing drives..." << endl;
     std::vector<PlpDrive> drives;
-    if (listDrives(fs, drives) != RFSV::E_PSI_GEN_NONE) {
+    if (rfsv->drives(drives) != RFSV::E_PSI_GEN_NONE) {
         cout << "Failed to list drives." << endl;
         return EXIT_FAILURE;
     }
+    drives.erase(
+        std::remove_if(
+            drives.begin(),
+            drives.end(),
+            [](const PlpDrive &drive) {
+                return (drive.getMediaType() == MediaType::kROM);
+            }
+        ),
+        drives.end()
+    );
 
+    // Recursively list all the files.
     std::vector<QualifiedDirectoryEntry> files;
     for (const auto &drive : drives) {
         cout << "Listing " << drive.getPath() << "..." << endl;
@@ -233,16 +169,14 @@ int main(int argc, char **argv) {
             cout << "Skipping ROM drive..." << endl;
             continue;
         }
-        auto driveFiles = dir(fs, drive.getPath(), true);
-        files.insert(files.end(), driveFiles.begin(), driveFiles.end());
+        if (rfsv->dir(drive.getPath(), true, files) != RFSV::E_PSI_GEN_NONE) {
+            cout << "Failed to list files." << endl;
+            return EXIT_FAILURE;
+        }
     }
 
     // Create directories for all drives we're backing up.
     for (const auto &drive : drives) {
-        // TODO: Do this filtering earlier.
-        if (static_cast<MediaType>(drive.getMediaType()) == MediaType::kROM) {
-            continue;
-        }
         std::string letter;
         letter += drive.getDriveLetter();
         std::string drivePath = Path::appending_component(backupPath, letter);
@@ -285,7 +219,7 @@ int main(int argc, char **argv) {
                 cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.path() << std::flush;
             }
             ProgressCallbackContext context = ProgressCallbackContext{file.path(), totalSize, completedSize};
-            fs->copyFromPsion(  // TODO: Check for errors.
+            rfsv->copyFromPsion(  // TODO: Check for errors.
                 file.path().c_str(),
                 destinationPath.c_str(),
                 (void *)&context,

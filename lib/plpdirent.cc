@@ -224,3 +224,11 @@ std::string PlpDrive::getPath() const {
     path += ":\\";
     return path;
 }
+
+std::string QualifiedDirectoryEntry::path() const {
+    if (directoryEntry_.isDirectory()) {
+        return parentPath_ + directoryEntry_.getName() + "\\";
+    } else {
+        return parentPath_ + directoryEntry_.getName();
+    }
+}
