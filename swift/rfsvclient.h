@@ -13,22 +13,22 @@ public:
     ~RFSVClient();
 
     bool connect(const char * const Peer, int PeerPort);
-    rfsv::errs dir(const char * const name, PlpDir &ret);
-    rfsv::errs devlist(uint32_t &devbits);
-    rfsv::errs devinfo(const char drive, PlpDrive &dinfo);
-    rfsv::errs pathtest(const char * const name);
-    rfsv::errs mkdir(const char * const name);
-    rfsv::errs rmdir(const char * const name);
-    rfsv::errs remove(const char * const name);
-    rfsv::errs rename(const char * const oldname, const char * newname);
-    rfsv::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
-    rfsv::errs copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
-    rfsv::errs fgeteattr(const char * const name, PlpDirent &e);
-    rfsv::errs fgetattr(const char * const name, uint32_t &attr);
+    RFSV::errs dir(const char * const name, PlpDir &ret);
+    RFSV::errs devlist(uint32_t &devbits);
+    RFSV::errs devinfo(const char drive, Drive &dinfo);
+    RFSV::errs pathtest(const char * const name);
+    RFSV::errs mkdir(const char * const name);
+    RFSV::errs rmdir(const char * const name);
+    RFSV::errs remove(const char * const name);
+    RFSV::errs rename(const char * const oldname, const char * newname);
+    RFSV::errs copyFromPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
+    RFSV::errs copyToPsion(const char *from, const char *to, void *ptr, cpCallback_t cb);
+    RFSV::errs fgeteattr(const char * const name, PlpDirent &e);
+    RFSV::errs fgetattr(const char * const name, uint32_t &attr);
 private:
     TCPSocket *_socket;
     rfsvfactory *_rfsvfactory;
-    rfsv *_rfsv;
+    RFSV *_rfsv;
 };
 
 extern const char *plpdirent_get_name(PlpDirent *dirent);

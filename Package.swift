@@ -39,6 +39,7 @@ let package = Package(
             sources: [
                 "lib/bufferarray.cc",
                 "lib/bufferstore.cc",
+                "lib/drive.cc",
                 "lib/Enum.cc",
                 "lib/iowatch.cc",
                 "lib/log.cc",
@@ -76,7 +77,7 @@ let package = Package(
                 "lib/linkchannel.cc",
                 "lib/ncp.cc",
                 "lib/ncp_log.cc",
-                "lib/ncp_session.cc",
+                "lib/ncpsession.cc",
                 "lib/datalink.cc",
                 "lib/socketchannel.cc",
             ],

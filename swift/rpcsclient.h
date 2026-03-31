@@ -11,11 +11,11 @@ public:
     ~RPCSClient();
 
     bool connect(const char * const Peer, int PeerPort);
-    rfsv::errs getMachineType(rpcs::machs &machineType);
-    rfsv::errs getMachineInfo(rpcs::machineInfo &machineInfo);
-    rfsv::errs getOwnerInfo(BufferArray &owner);
-    rfsv::errs execProgram(const char *program, const char *args);
-    rfsv::errs stopPrograms();
+    RFSV::errs getMachineType(rpcs::machs &machineType);
+    RFSV::errs getMachineInfo(rpcs::machineInfo &machineInfo);
+    RFSV::errs getOwnerInfo(BufferArray &owner);
+    RFSV::errs execProgram(const char *program, const char *args);
+    RFSV::errs stopPrograms();
 private:
     TCPSocket *_socket;
     rpcsfactory *_rpcsfactory;

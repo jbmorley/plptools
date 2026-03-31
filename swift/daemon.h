@@ -1,7 +1,7 @@
 #ifndef _daemon_h_
 #define _daemon_h_
 
-#include <ncp_session.h>
+#include <ncpsession.h>
 
 extern void *ncp_session_init(int sockNum,
                               int baudRate,

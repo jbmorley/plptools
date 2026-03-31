@@ -34,38 +34,38 @@ bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     return true;
 }
 
-rfsv::errs RPCSClient::getMachineType(rpcs::machs &machineType) {
+RFSV::errs RPCSClient::getMachineType(rpcs::machs &machineType) {
     assert(_rpcs);
-    Enum<rfsv::errs> res;
+    Enum<RFSV::errs> res;
     Enum<rpcs::machs> type;
     res = _rpcs->getMachineType(type);
-    if (res != rfsv::E_PSI_GEN_NONE) {
+    if (res != RFSV::E_PSI_GEN_NONE) {
         return res;
     }
     machineType = type.value;
-    return rfsv::E_PSI_GEN_NONE;
+    return RFSV::E_PSI_GEN_NONE;
 }
 
-rfsv::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
+RFSV::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
     assert(_rpcs);
     return _rpcs->getMachineInfo(machineInfo);
 }
 
-rfsv::errs RPCSClient::getOwnerInfo(BufferArray &owner) {
+RFSV::errs RPCSClient::getOwnerInfo(BufferArray &owner) {
     assert(_rpcs);
     return _rpcs->getOwnerInfo(owner);
 }
 
-rfsv::errs RPCSClient::execProgram(const char *program, const char *args) {
+RFSV::errs RPCSClient::execProgram(const char *program, const char *args) {
     assert(_rpcs);
     return _rpcs->execProgram(program, args);
 }
 
-rfsv::errs RPCSClient::stopPrograms() {
+RFSV::errs RPCSClient::stopPrograms() {
     assert(_rpcs);
-    Enum<rfsv::errs> res;
+    Enum<RFSV::errs> res;
     processList tmp;
-    if ((res = _rpcs->queryPrograms(tmp)) != rfsv::E_PSI_GEN_NONE) {
+    if ((res = _rpcs->queryPrograms(tmp)) != RFSV::E_PSI_GEN_NONE) {
         return res.value;
     }
     for (processList::iterator i = tmp.begin(); i != tmp.end(); i++) {
@@ -79,9 +79,9 @@ rfsv::errs RPCSClient::stopPrograms() {
         value.append(std::to_string(i->getPID()));
         printf("Stopping '%s'...\n", value.c_str());
         res = _rpcs->stopProgram(value.c_str());
-        if (res != rfsv::E_PSI_GEN_NONE) {
+        if (res != RFSV::E_PSI_GEN_NONE) {
             return res.value;
         }
     }
-    return rfsv::errs::E_PSI_GEN_NONE;
+    return RFSV::errs::E_PSI_GEN_NONE;
 }

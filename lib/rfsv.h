@@ -31,7 +31,7 @@
 typedef std::deque<class PlpDirent> PlpDir;
 
 class TCPSocket;
-class PlpDrive;
+class Drive;
 
 inline const int RFSV_SENDLEN = 2000;
 
@@ -41,18 +41,18 @@ inline const int RFSV_SENDLEN = 2000;
  */
 typedef int (*cpCallback_t)(void *, uint32_t);
 
-class rfsv16;
-class rfsv32;
+class RFSV16;
+class RFSV32;
 
 /**
  * A helper class for storing
- * intermediate internal information in rfsv16 and
- * rfsv32 .
+ * intermediate internal information in RFSV16 and
+ * RFSV32 .
  * @internal
  */
 class rfsvDirhandle {
-    friend class rfsv16;
-    friend class rfsv32;
+    friend class RFSV16;
+    friend class RFSV32;
 
 private:
     uint32_t h;
@@ -68,17 +68,17 @@ private:
 /**
  * Access remote file services of a Psion.
  *
- * rfsv provides an API for accessing file services
+ * RFSV provides an API for accessing file services
  * of a Psion connected via ncpd. This class defines the
  * interface and a small amount of common constants and
  * methods. The majority of implementation is provided
- * by @ref rfsv32 and @ref rfsv16 , which implement the
+ * by @ref RFSV32 and @ref RFSV16 , which implement the
  * variations of the protocol for EPOC and SIBO respectively.
  * Usually, the class @ref rfsvfactory is used to instantiate
  * the correct variant depending on the remote machine,
  * currently connected.
  */
-class rfsv {
+class RFSV {
 public:
     /**
     * The kown modes for seek.
@@ -217,7 +217,7 @@ public:
         PSI_A_TEXT       = 0x1000
     };
 
-    virtual ~rfsv();
+    virtual ~RFSV();
     void reset();
     void reconnect();
 
@@ -295,7 +295,7 @@ public:
     * @param name The name of the directory
     * @param ret  An STL deque of @ref PlpDirent entries.
     *
-    * @returns A Psion error code (One of enum @ref rfsv::errs ).
+    * @returns A Psion error code (One of enum @ref RFSV::errs ).
     */
     virtual Enum<errs> dir(const char * const name, PlpDir &ret) = 0;
 
@@ -390,12 +390,12 @@ public:
     * @param drive The drive character of the drive to get details from
     *              (e.g: 'C', 'D' etc.).
     *              (0 represents A:, 1 is B: and so on ...)
-    * @param dinfo A @ref PlpDrive object which is filled with the drive's
+    * @param dinfo A @ref Drive object which is filled with the drive's
     *              information upon return.
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> devinfo(const char drive, PlpDrive &dinfo) = 0;
+    virtual Enum<errs> devinfo(const char drive, Drive &dinfo) = 0;
 
     /**
     * Reads from a file on the Psion.
@@ -439,7 +439,7 @@ public:
     /**
     * Copies a file from the Psion to the local machine.
     */
-    virtual Enum<rfsv::errs> copyFromPsion(const char *from, int fd, cpCallback_t cb) = 0;
+    virtual Enum<RFSV::errs> copyFromPsion(const char *from, int fd, cpCallback_t cb) = 0;
 
     /**
     * Copies a file from local machine to the Psion.
@@ -581,7 +581,7 @@ public:
     virtual Enum<errs> setVolumeName(const char drive, const char * const name) = 0;
 
     /**
-    * Converts a file attribute @ref rfsv::file_attribs to
+    * Converts a file attribute @ref RFSV::file_attribs to
     * human readable format, usable for showing them in directory
     * listings. The first 7 characters are common to all
     * machine types:
