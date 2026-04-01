@@ -131,7 +131,7 @@ int main(int argc, char **argv) {
     }
 
     // Create the destination directory.
-    std::string backupPath = Path::appending_component(Path::get_cwd(), "backup");
+    std::string backupPath = Path::appending_component(Path::get_cwd(), "backup", Path::kHostSeparator);
     if (mkdir(backupPath.c_str(), 0755) != 0) {
         cout << "Backup directory '" << backupPath << "' exists." << endl;
         return EXIT_FAILURE;
@@ -179,7 +179,7 @@ int main(int argc, char **argv) {
     for (const auto &drive : drives) {
         std::string letter;
         letter += drive.getDriveLetter();
-        std::string drivePath = Path::appending_component(backupPath, letter);
+        std::string drivePath = Path::appending_component(backupPath, letter, Path::kHostSeparator);
         if (mkdir(drivePath.c_str(), 0755) != 0) {
             cout << "Failed to create directory '" << drivePath << "'." << endl;
             return EXIT_FAILURE;
@@ -200,7 +200,7 @@ int main(int argc, char **argv) {
         // Determine the destination path.
         std::vector<std::string> components = Path::split(file.getPath(), Path::kEPOCSeparator);
         components[0] = components[0][0];  // Remove the colon from the drive letter.
-        std::string destinationPath = Path::appending_components(backupPath, components);
+        std::string destinationPath = Path::appending_components(backupPath, components, Path::kHostSeparator);
 
         if (file.isDirectory()) {
             if (mkdir(destinationPath.c_str(), 0755) != 0) {
