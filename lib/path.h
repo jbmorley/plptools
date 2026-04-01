@@ -72,15 +72,15 @@ public:
     */
     static char *resolveEPOCPath(const char *path, const char *initialPath);
 
-    static std::vector<std::string> split(const std::string string,
-                                          const char separator = kHostSeparator);
+    static std::vector<std::string> split(const std::string string, const char separator);
 
     static std::string appending_components(const std::string &path,
-                                            const std::vector<std::string> &components, const char separator = kHostSeparator);
+                                            const std::vector<std::string> &components,
+                                            const char separator);
 
     static std::string appending_component(const std::string &path,
                                            const std::string component,
-                                           const char separator = kHostSeparator);
+                                           const char separator);
 
     /**
     * Return a new string that represents the path, @p path, with a guaranteed
