@@ -119,7 +119,9 @@ std::string Path::appending_components(const std::string &path,
                                        const char separator) {
     std::string result = path;
     for (const auto &component : components) {
-        result += separator;
+        if (result.empty() || result.back() != separator) {
+            result += separator;
+        }
         result += component;
     }
     return result;
