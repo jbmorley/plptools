@@ -37,7 +37,18 @@
 class Path {
 public:
 
+    /**
+    * Psion-native path separator.
+    *
+    * Always backslash.
+    */
     static constexpr char kEPOCSeparator = '\\';
+
+    /**
+    * Host-native path separator.
+    *
+    * Forward slash on POSIX operating systems; backslash on Windows.
+    */
     static constexpr char kHostSeparator = '/';
 
     /**
@@ -71,6 +82,14 @@ public:
                                            const std::string component,
                                            const char separator = kHostSeparator);
 
+    /**
+    * Return a new string that represents the path, @p path, with a guaranteed
+    * trailing separator, @p separator.
+    *
+    * This function makes no attempt to normalize paths or convert path separators.
+    *
+    * @return @p path + @p separator if path does not end in a separator; @p path, otherwise.
+    */
     static std::string ensuring_trailing_separator(const std::string &path,
                                                    const char separator = kHostSeparator);
 

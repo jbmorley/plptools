@@ -25,14 +25,15 @@
 
 #include <bufferarray.h>
 #include <bufferstore.h>
-#include <Enum.h>
 #include <cstdint>
+#include <drive.h>
+#include <Enum.h>
 #include <path.h>
 #include <plpintl.h>
-#include <tcpsocket.h>
 #include <rclip.h>
 #include <rfsv.h>
 #include <rpcs.h>
+#include <tcpsocket.h>
 
 #include <iostream>
 #include <string>
@@ -675,7 +676,7 @@ session(RFSV &a, rpcs & r, rclip & rc, TCPSocket & rclipSocket, vector<char *> a
         if (a.devlist(devbits) == RFSV::E_PSI_GEN_NONE) {
 
             for (i = 0; i < 26; i++) {
-                PlpDrive drive;
+                Drive drive;
                 if ((devbits & 1) && a.devinfo(i + 'A', drive) == RFSV::E_PSI_GEN_NONE) {
                     defDrive[0] = 'A' + i;
                     break;
@@ -852,7 +853,7 @@ session(RFSV &a, rpcs & r, rclip & rc, TCPSocket & rclipSocket, vector<char *> a
             if ((res = a.devlist(devbits)) == RFSV::E_PSI_GEN_NONE) {
                 cout << _("Drive Type Volname     Total     Free      UniqueID") << endl;
                 for (int i = 0; i < 26; i++) {
-                    PlpDrive drive;
+                    Drive drive;
 
                     if ((devbits & 1) != 0) {
                         if (a.devinfo(i + 'A', drive) == RFSV::E_PSI_GEN_NONE)

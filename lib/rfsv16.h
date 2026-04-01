@@ -54,7 +54,7 @@ public:
     Enum<RFSV::errs> fsetattr(const char * const, const uint32_t seta, const uint32_t unseta);
     Enum<RFSV::errs> dircount(const char * const, uint32_t &);
     Enum<RFSV::errs> devlist(uint32_t &);
-    Enum<RFSV::errs> devinfo(const char, PlpDrive &);
+    Enum<RFSV::errs> devinfo(const char, Drive &);
     Enum<RFSV::errs> fread(const uint32_t, unsigned char * const, const uint32_t, uint32_t &);
     Enum<RFSV::errs> fwrite(const uint32_t, const unsigned char * const, const uint32_t, uint32_t &);
     Enum<RFSV::errs> copyFromPsion(const char * const, const char * const, void *, cpCallback_t);
@@ -67,9 +67,9 @@ public:
     Enum<RFSV::errs> rmdir(const char * const);
     Enum<RFSV::errs> rename(const char * const, const char * const);
     Enum<RFSV::errs> remove(const char * const);
-    Enum<RFSV::errs> opendir(const uint32_t, const char * const, rfsvDirhandle &);
-    Enum<RFSV::errs> readdir(rfsvDirhandle &, PlpDirent &);
-    Enum<RFSV::errs> closedir(rfsvDirhandle &);
+    Enum<RFSV::errs> opendir(const uint32_t, const char * const, RFSVDirHandle &);
+    Enum<RFSV::errs> readdir(RFSVDirHandle &, PlpDirent &);
+    Enum<RFSV::errs> closedir(RFSVDirHandle &);
     Enum<RFSV::errs> setVolumeName(const char, const char * const);
 
     uint32_t opMode(const uint32_t);

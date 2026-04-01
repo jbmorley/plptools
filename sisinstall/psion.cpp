@@ -96,7 +96,7 @@ Psion::copyToPsion(const char * const from, const char * const to,
 }
 
 Enum<RFSV::errs>
-Psion::devinfo(const char drive, PlpDrive& plpDrive)
+Psion::devinfo(const char drive, Drive& plpDrive)
 {
     return m_rfsv->devinfo(drive, plpDrive);
 }
@@ -118,7 +118,7 @@ Psion::dir(const char* dir, PlpDir& files)
 bool
 Psion::dirExists(const char* name)
 {
-    rfsvDirhandle handle;
+    RFSVDirHandle handle;
     Enum<RFSV::errs> res;
     bool exists = false;
     res = m_rfsv->opendir(RFSV::PSI_A_ARCHIVE, name, handle);

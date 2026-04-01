@@ -21,14 +21,15 @@
 
 #include "config.h"
 
+#include <bufferarray.h>
+#include <bufferstore.h>
 #include <cli_utils.h>
 #include <cstdint>
+#include <drive.h>
 #include <rfsv.h>
-#include <rpcs.h>
 #include <rfsvfactory.h>
+#include <rpcs.h>
 #include <rpcsfactory.h>
-#include <bufferstore.h>
-#include <bufferarray.h>
 #include <tcpsocket.h>
 
 #include <iostream>
@@ -313,7 +314,7 @@ int rfsv_drivelist(int *cnt, device **dlist) {
     ret = a->devlist(devbits);
     if (ret == 0)
         for (i = 0; i < 26; i++) {
-            PlpDrive drive;
+            Drive drive;
 
             if ((devbits & 1) &&
                 ((a->devinfo(i + 'A', drive) == RFSV::E_PSI_GEN_NONE))) {

@@ -25,6 +25,26 @@
 #include "doctest.h"
 #include "path.h"
 
+TEST_CASE("Path::ensuring_trailing_separator") {
+
+    CHECK(Path::ensuring_trailing_separator("", Path::kEPOCSeparator) == "\\");
+    CHECK(Path::ensuring_trailing_separator("\\", Path::kEPOCSeparator) == "\\");
+    CHECK(Path::ensuring_trailing_separator("C:", Path::kEPOCSeparator) == "C:\\");
+    CHECK(Path::ensuring_trailing_separator("C:\\", Path::kEPOCSeparator) == "C:\\");
+
+    // N.B. These tests assume a POSIX host and will need updating for future Windows support.
+    CHECK(Path::ensuring_trailing_separator("", Path::kHostSeparator) == "/");
+    CHECK(Path::ensuring_trailing_separator("/", Path::kHostSeparator) == "/");
+    CHECK(Path::ensuring_trailing_separator("/mnt", Path::kHostSeparator) == "/mnt/");
+    CHECK(Path::ensuring_trailing_separator("/mnt/", Path::kHostSeparator) == "/mnt/");
+
+    // Unsupported path normalization and separator conversion.
+    CHECK(Path::ensuring_trailing_separator("/mnt/", Path::kEPOCSeparator) == "/mnt/\\");
+    CHECK(Path::ensuring_trailing_separator("C:\\", Path::kHostSeparator) == "C:\\/");
+    CHECK(Path::ensuring_trailing_separator("C:\\\\", Path::kEPOCSeparator) == "C:\\\\");
+    CHECK(Path::ensuring_trailing_separator("/mnt//", Path::kHostSeparator) == "/mnt//");
+}
+
 TEST_CASE("Path::getEPOCBasename") {
     CHECK(Path::getEPOCBasename("C:\\Random") == "Random");
     CHECK(Path::getEPOCBasename("C:\\Documents\\foo.txt") == "foo.txt");

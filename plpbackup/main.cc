@@ -20,24 +20,25 @@
  *
  */
 #include "config.h"
-#include "plpdirent.h"
 
+#include <bufferstore.h>
 #include <cli_utils.h>
 #include <cmath>
 #include <cstdlib>
+#include <drive.h>
+#include <path.h>
+#include <plpdirent.h>
+#include <plpintl.h>
+#include <rclip.h>
 #include <rfsv.h>
 #include <rfsvfactory.h>
 #include <rpcs.h>
 #include <rpcsfactory.h>
-#include <rclip.h>
-#include <plpintl.h>
+#include <semaphore.h>
 #include <stdint.h>
 #include <sys/dirent.h>
 #include <sys/stat.h>
 #include <tcpsocket.h>
-#include <bufferstore.h>
-#include <semaphore.h>
-#include <path.h>
 
 #include <iomanip>
 #include <iostream>
@@ -58,7 +59,8 @@ static void help() {
     cout << _(
         "Usage: plpbackup [OPTIONS]... [FTPCOMMAND]\n"
         "\n"
-        "Simple one-shot backup command; performs a full, non-incremental, backup.\n"
+        "Simple one-shot backup command; performs a full, non-incremental, backup of all.\n"
+        "writeable drives.\n"
         "\n"
         "Supported options:\n"
         "\n"
@@ -99,7 +101,7 @@ int main(int argc, char **argv) {
     string host = "127.0.0.1";
     int sockNum = cli_utils::lookup_default_port();
 
-    setlocale (LC_ALL, "");
+    setlocale(LC_ALL, "");
     textdomain(PACKAGE);
 
     while (1) {
@@ -145,7 +147,7 @@ int main(int argc, char **argv) {
 
     // List the available drives, excluding ROM drives.
     cout << "Listing drives..." << endl;
-    std::vector<PlpDrive> drives;
+    std::vector<Drive> drives;
     if (rfsv->drives(drives) != RFSV::E_PSI_GEN_NONE) {
         cout << "Failed to list drives." << endl;
         return EXIT_FAILURE;
@@ -154,7 +156,7 @@ int main(int argc, char **argv) {
         std::remove_if(
             drives.begin(),
             drives.end(),
-            [](const PlpDrive &drive) {
+            [](const Drive &drive) {
                 return (drive.getMediaType() == MediaType::kROM);
             }
         ),
@@ -162,17 +164,15 @@ int main(int argc, char **argv) {
     );
 
     // Recursively list all the files.
-    std::vector<QualifiedDirectoryEntry> files;
+    std::vector<PlpDirent> files;
     for (const auto &drive : drives) {
         cout << "Listing " << drive.getPath() << "..." << endl;
-        if (static_cast<MediaType>(drive.getMediaType()) == MediaType::kROM) {
-            cout << "Skipping ROM drive..." << endl;
-            continue;
-        }
-        if (rfsv->dir(drive.getPath(), true, files) != RFSV::E_PSI_GEN_NONE) {
+        std::vector<PlpDirent> driveFiles;
+        if (rfsv->dir(drive.getPath(), true, driveFiles) != RFSV::E_PSI_GEN_NONE) {
             cout << "Failed to list files." << endl;
             return EXIT_FAILURE;
         }
+        files.insert(files.end(), driveFiles.begin(), driveFiles.end());
     }
 
     // Create directories for all drives we're backing up.
@@ -188,39 +188,37 @@ int main(int argc, char **argv) {
 
     // Work out how much we're backing up and print the summary.
     auto totalSize = std::accumulate(files.begin(), files.end(), 0ULL,
-        [](unsigned long long sum, const QualifiedDirectoryEntry& file) {
-            return sum + file.directoryEntry_.getSize();
+        [](unsigned long long sum, const PlpDirent& file) {
+            return sum + file.getSize();
         });
     cout << "Backing up " << files.size() << " files (" << totalSize << " bytes)..." << endl;
 
     // Copy the files.
     size_t completedSize = 0;
-    for (const QualifiedDirectoryEntry &file : files) {
+    for (const PlpDirent &file : files) {
 
         // Determine the destination path.
-        std::vector<std::string> components = Path::split(file.path(), '\\');
-        auto drive = components[0][0];
-        components[0] = drive;
-        // components.erase(components.begin());  // Drop the drive.
+        std::vector<std::string> components = Path::split(file.getPath(), Path::kEPOCSeparator);
+        components[0] = components[0][0];  // Remove the colon from the drive letter.
         std::string destinationPath = Path::appending_components(backupPath, components);
 
-        if (file.directoryEntry_.isDirectory()) {
+        if (file.isDirectory()) {
             if (mkdir(destinationPath.c_str(), 0755) != 0) {
                 cout << "Failed to create directory '" << destinationPath << "'." << endl;
                 return EXIT_FAILURE;
             }
             {
                 float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.path() << std::flush;
+                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
             }
         } else {
             {
                 float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.path() << std::flush;
+                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
             }
-            ProgressCallbackContext context = ProgressCallbackContext{file.path(), totalSize, completedSize};
+            ProgressCallbackContext context = ProgressCallbackContext{file.getPath(), totalSize, completedSize};
             rfsv->copyFromPsion(  // TODO: Check for errors.
-                file.path().c_str(),
+                file.getPath().c_str(),
                 destinationPath.c_str(),
                 (void *)&context,
                 [](void *context, uint32_t size) {
@@ -229,14 +227,18 @@ int main(int argc, char **argv) {
                     cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << progressContext->path_ << std::flush;
                     return 1;
                 });
-            completedSize += file.directoryEntry_.getSize();
+            completedSize += file.getSize();
             {
                 float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.path() << std::flush;
+                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
             }
         }
     }
 
+    cout << "\n";
+
+    delete rfsv;
     delete rf;
-    return 0;
+
+    return EXIT_SUCCESS;
 }

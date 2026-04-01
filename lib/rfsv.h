@@ -31,8 +31,7 @@
 typedef std::deque<class PlpDirent> PlpDir;
 
 class TCPSocket;
-class PlpDrive;
-class QualifiedDirectoryEntry;
+class Drive;
 
 inline const int RFSV_SENDLEN = 2000;
 
@@ -51,13 +50,14 @@ class RFSV32;
  * RFSV32 .
  * @internal
  */
-class rfsvDirhandle {
+class RFSVDirHandle {
     friend class RFSV16;
     friend class RFSV32;
 
 private:
     uint32_t h;
     BufferStore b;
+    std::string name_;
 };
 
 /**
@@ -76,7 +76,7 @@ private:
 class RFSV {
 public:
     /**
-    * The kown modes for seek.
+    * The known modes for seek.
     */
     enum seek_mode {
         PSI_SEEK_SET = 1,
@@ -296,7 +296,7 @@ public:
 
     Enum<errs> dir(const std::string &path,
                    bool recursive,
-                   std::vector<QualifiedDirectoryEntry> &files);
+                   std::vector<PlpDirent> &files);
 
     /**
     * Retrieves the modification time of a file on the Psion.
@@ -389,14 +389,14 @@ public:
     * @param drive The drive character of the drive to get details from
     *              (e.g: 'C', 'D' etc.).
     *              (0 represents A:, 1 is B: and so on ...)
-    * @param dinfo A @ref PlpDrive object which is filled with the drive's
+    * @param dinfo A @ref Drive object which is filled with the drive's
     *              information upon return.
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> devinfo(const char drive, PlpDrive &dinfo) = 0;
+    virtual Enum<errs> devinfo(const char drive, Drive &dinfo) = 0;
 
-    Enum<errs> drives(std::vector<PlpDrive> &drives);
+    Enum<errs> drives(std::vector<Drive> &drives);
 
     /**
     * Reads from a file on the Psion.
@@ -549,7 +549,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> opendir(const uint32_t attr, const char * const name, rfsvDirhandle &handle) = 0;
+    virtual Enum<errs> opendir(const uint32_t attr, const char * const name, RFSVDirHandle &handle) = 0;
 
     /**
     * Read directory entries.
@@ -561,7 +561,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> readdir(rfsvDirhandle &handle, PlpDirent &entry) = 0;
+    virtual Enum<errs> readdir(RFSVDirHandle &handle, PlpDirent &entry) = 0;
 
     /**
     * Close a directory, previously opened with @ref opendir.
@@ -570,7 +570,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> closedir(rfsvDirhandle &handle) = 0;
+    virtual Enum<errs> closedir(RFSVDirHandle &handle) = 0;
 
     /**
     * Set the name of a Psion Volume (Drive).

@@ -21,11 +21,12 @@
  */
 #include "config.h"
 
-#include "rfsv.h"
-#include "plpdirent.h"
-#include "tcpsocket.h"
 #include "bufferstore.h"
+#include "drive.h"
 #include "Enum.h"
+#include "plpdirent.h"
+#include "rfsv.h"
+#include "tcpsocket.h"
 
 using namespace std;
 
@@ -181,7 +182,7 @@ int RFSV::getSpeed() {
 
 Enum<RFSV::errs> RFSV::dir(const std::string &path,
                            bool recursive,
-                           std::vector<QualifiedDirectoryEntry> &_files)  {
+                           std::vector<PlpDirent> &_files)  {
     Enum<RFSV::errs> result;
 
     // List the top level directory.
@@ -192,13 +193,12 @@ Enum<RFSV::errs> RFSV::dir(const std::string &path,
     }
 
     // List the inner directories.
-    std::vector<QualifiedDirectoryEntry> files;
+    std::vector<PlpDirent> files;
     for (PlpDirent entry: entries) {
-        QualifiedDirectoryEntry qualifiedDirectoryEntry({path, entry});
-        files.push_back(qualifiedDirectoryEntry);
-        if (recursive && qualifiedDirectoryEntry.directoryEntry_.isDirectory()) {
-            std::vector<QualifiedDirectoryEntry> directoryFiles;
-            result = dir(qualifiedDirectoryEntry.path(), recursive, directoryFiles);
+        files.push_back(entry);
+        if (recursive && entry.isDirectory()) {
+            std::vector<PlpDirent> directoryFiles;
+            result = dir(entry.getPath(), recursive, directoryFiles);
             if (result != RFSV::E_PSI_GEN_NONE) {
                 return result;
             }
@@ -209,7 +209,7 @@ Enum<RFSV::errs> RFSV::dir(const std::string &path,
     return RFSV::E_PSI_GEN_NONE;
 }
 
-Enum<RFSV::errs> RFSV::drives(std::vector<PlpDrive> &drives) {
+Enum<RFSV::errs> RFSV::drives(std::vector<Drive> &drives) {
     Enum<RFSV::errs> result;
 
     // Get the supported drives.
@@ -229,7 +229,7 @@ Enum<RFSV::errs> RFSV::drives(std::vector<PlpDrive> &drives) {
 
     // Iterate over the devices and get the info for the available drives.
     for (const auto &device : devices) {
-        PlpDrive driveInfo;
+        Drive driveInfo;
         result = devinfo(device, driveInfo);
         if (result == RFSV::E_PSI_FILE_NOTREADY) {
             // Ignore drives that aren't available.

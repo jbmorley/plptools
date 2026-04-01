@@ -23,6 +23,8 @@
 #define _RFSV32_H_
 
 #include "rfsv.h"
+
+#include "drive.h"
 #include "plpdirent.h"
 
 class rfsvfactory;
@@ -69,10 +71,10 @@ public:
     Enum<RFSV::errs> fclose(const uint32_t);
 
     Enum<RFSV::errs> devlist(uint32_t &);
-    Enum<RFSV::errs> devinfo(const char, PlpDrive&);
-    Enum<RFSV::errs> opendir(const uint32_t, const char * const, rfsvDirhandle &);
-    Enum<RFSV::errs> readdir(rfsvDirhandle &, PlpDirent &);
-    Enum<RFSV::errs> closedir(rfsvDirhandle &);
+    Enum<RFSV::errs> devinfo(const char, Drive&);
+    Enum<RFSV::errs> opendir(const uint32_t, const char * const, RFSVDirHandle &);
+    Enum<RFSV::errs> readdir(RFSVDirHandle &, PlpDirent &);
+    Enum<RFSV::errs> closedir(RFSVDirHandle &);
     Enum<RFSV::errs> setVolumeName(const char, const char * const);
     uint32_t opMode(const uint32_t);
     int getProtocolVersion() { return 5; }
