@@ -90,7 +90,6 @@ public:
     *
     * @return @p path + @p separator if path does not end in a separator; @p path, otherwise.
     */
-    static std::string ensuring_trailing_separator(const std::string &path,
-                                                   const char separator = kHostSeparator);
+    static std::string ensuring_trailing_separator(const std::string &path, const char separator);
 
 };
