@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999-2002 Fritz Elfert <felfert@to.com>
+ *  Copyright (c) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 
 #include <deque>
 #include <string>
+#include <vector>
 
 #include "Enum.h"
 #include "plpdirent.h"
@@ -427,7 +429,7 @@ public:
     *
     * @param from Name of the file on the Psion to be copied.
     * @param to Name of the destination file on the local machine.
-    * @param context Callback context passed to the callback function @ref func.
+    * @param context Callback context passed to the callback function @p func.
     * @param func Pointer to a function which gets called on every read.
     *             This function can be used to show some progress etc. May be
     *             set to NULL, where no callback is performed. If the callback

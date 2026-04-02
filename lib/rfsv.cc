@@ -4,6 +4,7 @@
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999 Matt J. Gumbley <matt@gumbley.demon.co.uk>
  *  Copyright (C) 1999-2001 Fritz Elfert <felfert@to.com>
+ *  Copyright (c) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -209,28 +210,29 @@ Enum<RFSV::errs> RFSV::dir(const std::string &path,
     return RFSV::E_PSI_GEN_NONE;
 }
 
-Enum<RFSV::errs> RFSV::drives(std::vector<Drive> &drives) {
+Enum<RFSV::errs> RFSV::drives(std::vector<Drive> &_drives) {
     Enum<RFSV::errs> result;
 
     // Get the supported drives.
-    uint32_t deviceBits = 0;
-    result = devlist(deviceBits);
+    uint32_t driveBits = 0;
+    result = devlist(driveBits);
     if (result != RFSV::E_PSI_GEN_NONE) {
         return result;
     }
 
     // Convert them to drive letters.
-    std::vector<char> devices;
+    std::vector<char> driveLetters;
     for (int i = 0; i < 26; i++) {
-        if (deviceBits & (1 << i)) {
-            devices.push_back('A' + i);
+        if (driveBits & (1 << i)) {
+            driveLetters.push_back('A' + i);
         }
     }
 
-    // Iterate over the devices and get the info for the available drives.
-    for (const auto &device : devices) {
-        Drive driveInfo;
-        result = devinfo(device, driveInfo);
+    // Iterate over the drive letters and get the info for the available drives.
+    std::vector<Drive> drives;
+    for (const auto &driveLetter : driveLetters) {
+        Drive drive;
+        result = devinfo(driveLetter, drive);
         if (result == RFSV::E_PSI_FILE_NOTREADY) {
             // Ignore drives that aren't available.
             continue;
@@ -238,7 +240,9 @@ Enum<RFSV::errs> RFSV::drives(std::vector<Drive> &drives) {
         if (result != RFSV::E_PSI_GEN_NONE) {
             return result;
         }
-        drives.push_back(driveInfo);
+        drives.push_back(drive);
     }
+
+    _drives = drives;
     return RFSV::E_PSI_GEN_NONE;
 }
