@@ -38,7 +38,7 @@ enum class MediaType: uint32_t {
     kFlashDisk = 6,
     kROM = 7,
     kRemote = 8,
-};
+} APPLE_CLOSED_ENUM;
 
 /**
  * A class representing information about
