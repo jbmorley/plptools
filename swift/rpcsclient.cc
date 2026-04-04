@@ -34,10 +34,10 @@ bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     return true;
 }
 
-RFSV::errs RPCSClient::getMachineType(rpcs::machs &machineType) {
+RFSV::errs RPCSClient::getMachineType(RPCS::machs &machineType) {
     assert(_rpcs);
     Enum<RFSV::errs> res;
-    Enum<rpcs::machs> type;
+    Enum<RPCS::machs> type;
     res = _rpcs->getMachineType(type);
     if (res != RFSV::E_PSI_GEN_NONE) {
         return res;
@@ -46,7 +46,7 @@ RFSV::errs RPCSClient::getMachineType(rpcs::machs &machineType) {
     return RFSV::E_PSI_GEN_NONE;
 }
 
-RFSV::errs RPCSClient::getMachineInfo(rpcs::machineInfo &machineInfo) {
+RFSV::errs RPCSClient::getMachineInfo(RPCS::machineInfo &machineInfo) {
     assert(_rpcs);
     return _rpcs->getMachineInfo(machineInfo);
 }

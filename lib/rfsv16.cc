@@ -118,21 +118,22 @@ fclose(uint32_t fileHandle)
 }
 
 Enum<RFSV::errs> RFSV16::
-opendir(const uint32_t attr, const char *name, rfsvDirhandle &dH) {
+opendir(const uint32_t attr, const char *name, RFSVDirHandle &dH) {
     uint32_t handle;
     Enum<RFSV::errs> res = fopendir(name, handle);
     dH.h = handle;
     dH.b.init();
+    dH.name_ = name;
     return res;
 }
 
 Enum<RFSV::errs> RFSV16::
-closedir(rfsvDirhandle &dH) {
+closedir(RFSVDirHandle &dH) {
     return fclose(dH.h);
 }
 
 Enum<RFSV::errs> RFSV16::
-readdir(rfsvDirhandle &dH, PlpDirent &e) {
+readdir(RFSVDirHandle &dH, PlpDirent &e) {
     Enum<RFSV::errs> res = E_PSI_GEN_NONE;
 
     if (dH.b.getLen() < 17) {
@@ -150,13 +151,14 @@ readdir(rfsvDirhandle &dH, PlpDirent &e) {
     }
     if ((res == E_PSI_GEN_NONE) && (dH.b.getLen() > 16)) {
         uint16_t version = dH.b.getWord(0);
-        if (version != 2)
+        if (version != 2) {
             return E_PSI_GEN_FAIL;
-        e.attr    = attr2std((uint32_t)dH.b.getWord(2));
-        e.size    = dH.b.getDWord(4);
+        }
+        e.attr = attr2std((uint32_t)dH.b.getWord(2));
+        e.size = dH.b.getDWord(4);
         e.time.setSiboTime(dH.b.getDWord(8));
-        e.name    = dH.b.getString(16);
-        //e.UID     = PlpUID(0,0,0);
+        e.dirname_ = dH.name_;
+        e.name = dH.b.getString(16);
         e.attrstr = attr2String(e.attr);
 
         dH.b.discardFirstBytes(17 + e.name.length());
@@ -168,7 +170,7 @@ readdir(rfsvDirhandle &dH, PlpDirent &e) {
 Enum<RFSV::errs> RFSV16::
 dir(const char *name, PlpDir &files)
 {
-    rfsvDirhandle h;
+    RFSVDirHandle h;
     files.clear();
     Enum<RFSV::errs> res = opendir(PSI_A_HIDDEN|PSI_A_SYSTEM|PSI_A_DIR, name, h);
     while (res == E_PSI_GEN_NONE) {
@@ -308,7 +310,7 @@ fsetattr(const char *name, uint32_t seta, uint32_t unseta)
 Enum<RFSV::errs> RFSV16::
 dircount(const char * const name, uint32_t &count)
 {
-    rfsvDirhandle h;
+    RFSVDirHandle h;
     Enum<RFSV::errs> res = opendir(PSI_A_HIDDEN|PSI_A_SYSTEM|PSI_A_DIR, name, h);
     while (res == E_PSI_GEN_NONE) {
         PlpDirent e;
@@ -448,7 +450,6 @@ devinfo(const char drive, Drive &dinfo)
     dinfo.setSpace(a.getDWord(10), 0);
 
     dinfo.setName(toupper(drive), a.getString(14));
-
 
     return res;
 }

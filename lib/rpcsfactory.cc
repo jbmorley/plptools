@@ -44,14 +44,14 @@ rpcsfactory::rpcsfactory(TCPSocket *_skt)
     skt = _skt;
 }
 
-rpcs * rpcsfactory::create(bool reconnect)
+RPCS *rpcsfactory::create(bool reconnect)
 {
     // skt is connected to the ncp daemon, which will have (hopefully) seen
     // an INFO exchange, where the protocol version of the remote Psion was
     // sent, and noted. We have to ask the ncp daemon which protocol it saw,
-    // so we can instantiate the correct rpcs protocol handler for the
+    // so we can instantiate the correct RPCS protocol handler for the
     // caller. We announce ourselves to the NCP daemon, and the relevant
-    // rpcs module will also announce itself.
+    // RPCS module will also announce itself.
 
     BufferStore a;
 
@@ -69,10 +69,10 @@ rpcs * rpcsfactory::create(bool reconnect)
     }
     if (skt->getBufferStore(a) == 1) {
         if (a.getLen() > 8 && !strncmp(a.getString(), "Series 3", 8)) {
-            return new rpcs16(skt);
+            return new RPCS16(skt);
         }
         else if (a.getLen() > 8 && !strncmp(a.getString(), "Series 5", 8)) {
-            return new rpcs32(skt);
+            return new RPCS32(skt);
         }
         if ((a.getLen() > 8) && !strncmp(a.getString(), "No Psion", 8)) {
             skt->closeSocket();

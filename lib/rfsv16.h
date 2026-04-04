@@ -67,13 +67,14 @@ public:
     Enum<RFSV::errs> rmdir(const char * const);
     Enum<RFSV::errs> rename(const char * const, const char * const);
     Enum<RFSV::errs> remove(const char * const);
-    Enum<RFSV::errs> opendir(const uint32_t, const char * const, rfsvDirhandle &);
-    Enum<RFSV::errs> readdir(rfsvDirhandle &, PlpDirent &);
-    Enum<RFSV::errs> closedir(rfsvDirhandle &);
+    Enum<RFSV::errs> opendir(const uint32_t, const char * const, RFSVDirHandle &);
+    Enum<RFSV::errs> readdir(RFSVDirHandle &, PlpDirent &);
+    Enum<RFSV::errs> closedir(RFSVDirHandle &);
     Enum<RFSV::errs> setVolumeName(const char, const char * const);
 
     uint32_t opMode(const uint32_t);
     int getProtocolVersion() { return 3; }
+    char defaultInternalDriveLetter() { return 'M'; };
 
 private:
     enum commands {

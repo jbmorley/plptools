@@ -27,13 +27,13 @@ class TCPSocket;
 class rpcsfactory;
 
 /**
- * This is the implementation of the @ref rpcs protocol for
+ * This is the implementation of the @ref RPCS protocol for
  * Psion series 5 (EPOC) variant. You normally never create
  * objects of this class directly. Thus the constructor is
  * private. Use @ref rpcsfactory for creating an instance of
- * @ref rpcs . For a complete documentation, see @ref rpcs .
+ * @ref RPCS . For a complete documentation, see @ref RPCS .
  */
-class rpcs32 : public rpcs {
+class RPCS32 : public RPCS {
     friend class rpcsfactory;
 
  public:
@@ -59,7 +59,7 @@ protected:
     Enum<RFSV::errs> configOpen(uint16_t &, uint32_t);
 
  private:
-    rpcs32(TCPSocket *);
+    RPCS32(TCPSocket *);
 };
 
 #endif

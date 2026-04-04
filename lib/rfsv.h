@@ -3,6 +3,7 @@
  *
  *  Copyright (C) 1999 Philip Proudman <philip.proudman@btinternet.com>
  *  Copyright (C) 1999-2002 Fritz Elfert <felfert@to.com>
+ *  Copyright (c) 2026 Jason Morley <hello@jbmorley.co.uk>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -23,6 +24,7 @@
 
 #include <deque>
 #include <string>
+#include <vector>
 
 #include "Enum.h"
 #include "plpdirent.h"
@@ -50,13 +52,14 @@ class RFSV32;
  * RFSV32 .
  * @internal
  */
-class rfsvDirhandle {
+class RFSVDirHandle {
     friend class RFSV16;
     friend class RFSV32;
 
 private:
     uint32_t h;
     BufferStore b;
+    std::string name_;
 };
 
 #if defined(__clang__) && defined(__apple_build_version__) && __apple_build_version__ >= 16000026  // Xcode 16.0
@@ -81,7 +84,7 @@ private:
 class RFSV {
 public:
     /**
-    * The kown modes for seek.
+    * The known modes for seek.
     */
     enum seek_mode {
         PSI_SEEK_SET = 1,
@@ -299,6 +302,10 @@ public:
     */
     virtual Enum<errs> dir(const char * const name, PlpDir &ret) = 0;
 
+    Enum<errs> dir(const std::string &path,
+                   bool recursive,
+                   std::vector<PlpDirent> &files);
+
     /**
     * Retrieves the modification time of a file on the Psion.
     *
@@ -397,6 +404,8 @@ public:
     */
     virtual Enum<errs> devinfo(const char drive, Drive &dinfo) = 0;
 
+    Enum<errs> drives(std::vector<Drive> &drives);
+
     /**
     * Reads from a file on the Psion.
     *
@@ -426,6 +435,7 @@ public:
     *
     * @param from Name of the file on the Psion to be copied.
     * @param to Name of the destination file on the local machine.
+    * @param context Callback context passed to the callback function @p func.
     * @param func Pointer to a function which gets called on every read.
     *             This function can be used to show some progress etc. May be
     *             set to NULL, where no callback is performed. If the callback
@@ -434,7 +444,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> copyFromPsion(const char *from, const char *to, void *, cpCallback_t func) = 0;
+    virtual Enum<errs> copyFromPsion(const char *from, const char *to, void *context, cpCallback_t func) = 0;
 
     /**
     * Copies a file from the Psion to the local machine.
@@ -547,7 +557,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> opendir(const uint32_t attr, const char * const name, rfsvDirhandle &handle) = 0;
+    virtual Enum<errs> opendir(const uint32_t attr, const char * const name, RFSVDirHandle &handle) = 0;
 
     /**
     * Read directory entries.
@@ -559,7 +569,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> readdir(rfsvDirhandle &handle, PlpDirent &entry) = 0;
+    virtual Enum<errs> readdir(RFSVDirHandle &handle, PlpDirent &entry) = 0;
 
     /**
     * Close a directory, previously opened with @ref opendir.
@@ -568,7 +578,7 @@ public:
     *
     * @returns A Psion error code (One of enum @ref #errs ).
     */
-    virtual Enum<errs> closedir(rfsvDirhandle &handle) = 0;
+    virtual Enum<errs> closedir(RFSVDirHandle &handle) = 0;
 
     /**
     * Set the name of a Psion Volume (Drive).
@@ -639,6 +649,8 @@ public:
      * @returns Either 3 or 5 representing Series 3 (SIBO) or Series 5 (EPOC)
      */
     virtual int getProtocolVersion() = 0;
+
+    virtual char defaultInternalDriveLetter() = 0;
 
 protected:
     /**
