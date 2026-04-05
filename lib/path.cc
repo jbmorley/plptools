@@ -99,17 +99,35 @@ char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
     return f1;
 }
 
-std::vector<std::string> Path::split(const std::string string,
-                                     const char separator) {
+std::vector<std::string> Path::split(const std::string string, const char separator) {
     std::vector<std::string> result;
     size_t offset = 0;
     size_t index = 0;
     while ((index = string.find(separator, offset)) != std::string::npos) {
-        result.push_back(string.substr(offset, index-offset));
+        // If the index of the first separator is 0, then we know the path is absolute and we insert the
+        // root directory path component.
+        if (index == 0) {
+            result.push_back("/");
+        }
+        int length = index-offset;
+        if (length > 0) {
+            result.push_back(string.substr(offset, index-offset));
+        }
         offset = index + 1;
     }
     if (offset - string.length() > 0) {
         result.push_back(string.substr(offset));
+    }
+    return result;
+}
+
+std::string Path::join(const std::vector<std::string> &components, const char separator) {
+    std::string result;
+    for (const auto &component : components) {
+        if (!result.empty() && result.back() != separator) {
+            result += separator;
+        }
+        result += component;
     }
     return result;
 }
@@ -139,4 +157,45 @@ std::string Path::ensuring_trailing_separator(const std::string &path,
         return path;
     }
     return path + separator;
+}
+
+bool Path::is_root(const std::string &pathComponent, const char separator) {
+    if (separator == '/' && pathComponent.length() == 1 && pathComponent[0] == separator) {
+        return true;
+    } else if (separator == '\\' && pathComponent.length() == 2) {
+        return std::isalpha(static_cast<unsigned char>(pathComponent[0])) && pathComponent[1] == ':';
+    } else {
+        return false;
+    }
+}
+
+bool Path::is_absolute(const std::string &path, const char separator) {
+    auto components = split(path, separator);
+    if (components.empty()) {
+        return false;
+    }
+    return is_root(components.front(), separator);
+}
+
+std::string Path::resolve_path(const std::string &path,
+                               const std::string &startingPath,
+                               const char separator) {
+    std::vector<std::string> pathComponents = split(path, separator);
+    std::vector<std::string> startingPathComponents = split(startingPath, separator);
+
+    // Check to see if the path is already absolute by inspecting the first component.
+    if (!pathComponents.empty() && is_root(pathComponents.front(), separator)) {
+        return path;
+    }
+
+    for (const auto &pathComponent : pathComponents) {
+        if (pathComponent == "..") {
+            // TODO: We should probably crash intentionally if this doesn't work?
+            startingPathComponents.pop_back();
+        } else {
+            startingPathComponents.push_back(pathComponent);
+        }
+    }
+
+    return Path::join(startingPathComponents, separator);
 }

@@ -48,12 +48,21 @@ TEST_CASE("Path::ensuring_trailing_separator") {
 TEST_CASE("Path::getEPOCBasename") {
     CHECK(Path::getEPOCBasename("C:\\Random") == "Random");
     CHECK(Path::getEPOCBasename("C:\\Documents\\foo.txt") == "foo.txt");
+
+    // Legacy behavior (might be a bug).
+    CHECK(Path::getEPOCBasename("C:\\Random\\") == "");
 }
 
+// TODO: Rename to get parent path?
 TEST_CASE("Path::getEPOCDirname") {
     SUBCASE("C:\\Random") {
         std::string result;
         result = Path::getEPOCDirname("C:\\Random");
+        CHECK(result == "C:\\");
+    }
+    SUBCASE("C:\\Random\\") {
+        std::string result;
+        result = Path::getEPOCDirname("C:\\Random\\");
         CHECK(result == "C:\\");
     }
     SUBCASE("C:\\Documents\\foo.txt") {
@@ -66,19 +75,77 @@ TEST_CASE("Path::getEPOCDirname") {
         result = Path::getEPOCDirname("C:\\");
         CHECK(result == "C:");
     }
-//     SUBCASE("C:\\Random\\") {
-//         std::string result;
-//         result = Path::getEPOCDirname("C:\\Random\\");
-//         CHECK(result == "C:\\");
-//     }
-//     SUBCASE("C:") {
-//         std::string result;
-//         result = Path::getEPOCDirname("C:");
-//         CHECK(result == "C:");
-//     }
+
+    // Legacy behavior (might be a bug).
+    SUBCASE("C:") {
+        std::string result;
+        result = Path::getEPOCDirname("C:");
+        CHECK(result == "C");
+    }
+}
+
+TEST_CASE("Path::is_absolute") {
+
+    CHECK(Path::is_absolute("C:\\", '\\') == true);
+    CHECK(Path::is_absolute("C:\\", '/') == false);
+
+    CHECK(Path::is_absolute("C:", '\\') == true);
+    CHECK(Path::is_absolute("C:", '/') == false);
+
+    CHECK(Path::is_absolute("", '\\') == false);
+    CHECK(Path::is_absolute("", '/') == false);
+
+    CHECK(Path::is_absolute("foo", '\\') == false);
+    CHECK(Path::is_absolute("foo", '/') == false);
+    CHECK(Path::is_absolute("foo\\bar", '\\') == false);
+    CHECK(Path::is_absolute("foo/bar", '/') == false);
+
+    CHECK(Path::is_absolute("\\C:\\", '\\') == false);
+    CHECK(Path::is_absolute("/C:/", '/') == true);
 }
 
 TEST_CASE("Path::appending_components") {
     CHECK(Path::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
     CHECK(Path::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
+}
+
+TEST_CASE("Path::split") {
+    CHECK(Path::split("", '\\') == std::vector<std::string>({}));
+    CHECK(Path::split("one\\two\\three", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("one\\two\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("one\\two\\\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("C:\\one\\two\\\\three\\", '\\') == std::vector<std::string>({"C:", "one", "two", "three"}));
+
+    CHECK(Path::split("", '/') == std::vector<std::string>({}));
+    CHECK(Path::split("one/two/three", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("one/two/three/", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("one/two//three/", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(Path::split("/one/two/three/", '/') == std::vector<std::string>({"/", "one", "two", "three"}));
+}
+
+TEST_CASE("Path::join") {
+    CHECK(Path::join({""}, '/') == "");
+    CHECK(Path::join({"hello"}, '/') == "hello");
+    CHECK(Path::join({"hello", "world"}, '/') == "hello/world");
+    CHECK(Path::join({"/hello", "world"}, '/') == "/hello/world");
+    CHECK(Path::join({"/", "hello", "world"}, '/') == "/hello/world");
+    CHECK(Path::join({"hello", "world"}, '\\') == "hello\\world");
+    CHECK(Path::join({"C:\\hello", "world"}, '\\') == "C:\\hello\\world");
+    CHECK(Path::join({"C:\\", "hello", "world"}, '\\') == "C:\\hello\\world");
+    CHECK(Path::join({"C:", "hello", "world"}, '\\') == "C:\\hello\\world");
+}
+
+TEST_CASE("Path::resolve_path") {
+
+    // Posix.
+    CHECK(Path::resolve_path("/foo/bar/baz", "", '/') == "/foo/bar/baz");
+    CHECK(Path::resolve_path("/foo/bar/baz", "/one/two", '/') == "/foo/bar/baz");
+    CHECK(Path::resolve_path("baz", "/foo/bar", '/') == "/foo/bar/baz");
+    CHECK(Path::resolve_path("../baz", "/foo/bar", '/') == "/foo/baz");
+
+    // Windows (and EPOC).
+    CHECK(Path::resolve_path("C:\\foo\\bar\\baz", "", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(Path::resolve_path("C:\\foo\\bar\\baz", "C:\\one\\two", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(Path::resolve_path("baz", "C:\\foo\\bar", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(Path::resolve_path("..\\baz", "D:\\foo\\bar", '\\') == "D:\\foo\\baz");
 }

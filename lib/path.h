@@ -74,6 +74,12 @@ public:
 
     static std::vector<std::string> split(const std::string string, const char separator);
 
+    static std::string join(const std::vector<std::string> &components, const char separator);
+
+    static bool is_root(const std::string &pathComponent, const char separator);
+
+    static bool is_absolute(const std::string &path, const char separator);
+
     static std::string appending_components(const std::string &path,
                                             const std::vector<std::string> &components,
                                             const char separator);
@@ -91,5 +97,14 @@ public:
     * @return @p path + @p separator if path does not end in a separator; @p path, otherwise.
     */
     static std::string ensuring_trailing_separator(const std::string &path, const char separator);
+
+    /**
+    * Returns a path by resolving a relative or absolute path against a starting path.
+    *
+    * @p startingPath may be relative or absolute, but @p path must be contained within that path.
+    */
+    static std::string resolve_path(const std::string &path,
+                                    const std::string &startingPath,
+                                    const char separator);
 
 };

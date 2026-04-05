@@ -95,9 +95,14 @@ struct ProgressCallbackContext {
 
 };
 
+void log_progress(const std::string &path, float_t completedSize, float_t totalSize) {
+    float_t progress =  completedSize / totalSize;
+    cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << path << std::flush;
+
+}
+
 int main(int argc, char **argv) {
 
-    TCPSocket *skt;
     string host = "127.0.0.1";
     int sockNum = cli_utils::lookup_default_port();
 
@@ -111,13 +116,13 @@ int main(int argc, char **argv) {
         switch (c) {
             case '?':
                 usage();
-                return -1;
+                return EXIT_FAILURE;
             case 'V':
                 cout << _("plpftp Version ") << VERSION << endl;
-                return 0;
+                return EXIT_SUCCESS;
             case 'h':
                 help();
-                return 0;
+                return EXIT_SUCCESS;
             case 'p':
                 if (!cli_utils::parse_port(optarg, &host, &sockNum)) {
                     cout << _("Invalid port definition.") << endl;
@@ -126,23 +131,28 @@ int main(int argc, char **argv) {
                 break;
         }
     }
-    if (optind == argc) {
-        backupHeader();
+    if (argc - optind != 1) {
+        usage();
+        return EXIT_FAILURE;
     }
+    std::string backupPath = argv[optind];
+    backupPath = Path::resolve_path(backupPath, Path::get_cwd(), Path::kHostSeparator);
+    cout << backupPath << endl;
+
+    backupHeader();
 
     // Create the destination directory.
-    std::string backupPath = Path::appending_component(Path::get_cwd(), "backup", Path::kHostSeparator);
     if (mkdir(backupPath.c_str(), 0755) != 0) {
         cout << "Backup directory '" << backupPath << "' exists." << endl;
         return EXIT_FAILURE;
     }
 
-    skt = new TCPSocket();
-    if (!skt->connect(host.c_str(), sockNum)) {
+    TCPSocket *socket = new TCPSocket();
+    if (!socket->connect(host.c_str(), sockNum)) {
         cout << _("Could not connect to ncpd.") << endl;
         return EXIT_FAILURE;
     }
-    rfsvfactory *rf = new rfsvfactory(skt);
+    rfsvfactory *rf = new rfsvfactory(socket);
     RFSV *rfsv = rf->create(false);
 
     // List the available drives, excluding ROM drives.
@@ -203,35 +213,34 @@ int main(int argc, char **argv) {
         std::string destinationPath = Path::appending_components(backupPath, components, Path::kHostSeparator);
 
         if (file.isDirectory()) {
+            // Create directory.
             if (mkdir(destinationPath.c_str(), 0755) != 0) {
                 cout << "Failed to create directory '" << destinationPath << "'." << endl;
                 return EXIT_FAILURE;
             }
-            {
-                float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
-            }
+            log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
         } else {
-            {
-                float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
-            }
+            // Copy file.
+            log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
             ProgressCallbackContext context = ProgressCallbackContext{file.getPath(), totalSize, completedSize};
-            rfsv->copyFromPsion(  // TODO: Check for errors.
+            RFSV::errs result = rfsv->copyFromPsion(
                 file.getPath().c_str(),
                 destinationPath.c_str(),
-                (void *)&context,
+                static_cast<void *>(&context),
                 [](void *context, uint32_t size) {
                     ProgressCallbackContext *progressContext = static_cast<ProgressCallbackContext *>(context);
-                    float_t progress =  (float_t)(progressContext->completedSize_ + size) / (float_t)progressContext->totalSize_;
-                    cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << progressContext->path_ << std::flush;
+                    log_progress(
+                        progressContext->path_,
+                        progressContext->completedSize_ + size,
+                        progressContext->totalSize_);
                     return 1;
                 });
-            completedSize += file.getSize();
-            {
-                float_t progress =  (float_t)completedSize / (float_t)totalSize;
-                cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << file.getPath() << std::flush;
+            if (result != RFSV::E_PSI_GEN_NONE) {
+                cout << "Failed to copy file '" << file.getPath() << "'." << endl;
+                return EXIT_FAILURE;
             }
+            completedSize += file.getSize();
+            log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
         }
     }
 
