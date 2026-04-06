@@ -31,22 +31,20 @@
 #include <plpintl.h>
 #include <rclip.h>
 #include <rfsv.h>
-#include <rfsvfactory.h>
 #include <rpcs.h>
-#include <rpcsfactory.h>
 #include <semaphore.h>
 #include <stdint.h>
 #include <sys/dirent.h>
 #include <sys/stat.h>
 #include <tcpsocket.h>
 
+#include <dirent.h>
 #include <iomanip>
 #include <iostream>
 #include <numeric>
-#include <vector>
-
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <vector>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
@@ -57,7 +55,7 @@ using namespace std;
 
 static void help() {
     cout << _(
-        "Usage: plpbackup [OPTIONS]... [FTPCOMMAND]\n"
+        "Usage: plpbackup [OPTIONS]... <backup|restore> <destination>\n"
         "\n"
         "Simple one-shot backup command; performs a full, non-incremental, backup of all.\n"
         "writeable drives.\n"
@@ -90,70 +88,73 @@ void backupHeader() {
 struct ProgressCallbackContext {
 
     std::string path_;
-    size_t totalSize_;
-    size_t completedSize_;
+    off_t totalSize_;
+    off_t completedSize_;
 
 };
+
+struct HostDirectoryEntry {
+    std::string path;
+    bool isDirectory;
+    off_t size;
+};
+
+int dir(const std::string &path, const bool recursive, std::vector<HostDirectoryEntry> &_files) {
+
+    // List the top-level directory.
+    std::vector<std::string> children;
+    DIR *directory = opendir(path.c_str());
+    if (!directory) {
+        return errno;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(directory)) != nullptr) {
+        if (entry->d_name[0] == '.') {  // TODO: Do we want to ignore all hidden files?
+            continue;
+        }
+        children.push_back(Path::appending_component(path, entry->d_name, Path::kHostSeparator));
+    }
+    closedir(directory);
+
+    // Check each file, listing the inner directories if we're recursive.
+    std::vector<HostDirectoryEntry> files;
+    for (const auto &file : children) {
+        struct stat st;
+        if (stat(file.c_str(), &st) != 0) {
+            return errno;
+        }
+        HostDirectoryEntry directoryEntry({file, S_ISDIR(st.st_mode), st.st_size});
+        files.push_back(directoryEntry);
+        if (!recursive) {
+            continue;
+        }
+        if (S_ISDIR(st.st_mode)) {
+            std::vector<HostDirectoryEntry> childFiles;
+            int result = dir(file, recursive, childFiles);
+            if (result != 0) {
+                return result;
+            }
+            files.insert(files.end(), childFiles.begin(), childFiles.end());
+        }
+    }
+
+    _files = files;
+
+    return 0;
+}
 
 void log_progress(const std::string &path, float_t completedSize, float_t totalSize) {
     float_t progress =  completedSize / totalSize;
     cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << path << std::flush;
-
 }
 
-int main(int argc, char **argv) {
-
-    string host = "127.0.0.1";
-    int sockNum = cli_utils::lookup_default_port();
-
-    setlocale(LC_ALL, "");
-    textdomain(PACKAGE);
-
-    while (1) {
-        int c = getopt_long(argc, argv, "hVp:", opts, NULL);
-        if (c == -1)
-            break;
-        switch (c) {
-            case '?':
-                usage();
-                return EXIT_FAILURE;
-            case 'V':
-                cout << _("plpftp Version ") << VERSION << endl;
-                return EXIT_SUCCESS;
-            case 'h':
-                help();
-                return EXIT_SUCCESS;
-            case 'p':
-                if (!cli_utils::parse_port(optarg, &host, &sockNum)) {
-                    cout << _("Invalid port definition.") << endl;
-                    return 1;
-                }
-                break;
-        }
-    }
-    if (argc - optind != 1) {
-        usage();
-        return EXIT_FAILURE;
-    }
-    std::string backupPath = argv[optind];
-    backupPath = Path::resolve_path(backupPath, Path::get_cwd(), Path::kHostSeparator);
-    cout << backupPath << endl;
-
-    backupHeader();
+int backup(RFSV *rfsv, std::string backupPath) {
 
     // Create the destination directory.
     if (mkdir(backupPath.c_str(), 0755) != 0) {
         cout << "Backup directory '" << backupPath << "' exists." << endl;
         return EXIT_FAILURE;
     }
-
-    TCPSocket *socket = new TCPSocket();
-    if (!socket->connect(host.c_str(), sockNum)) {
-        cout << _("Could not connect to ncpd.") << endl;
-        return EXIT_FAILURE;
-    }
-    rfsvfactory *rf = new rfsvfactory(socket);
-    RFSV *rfsv = rf->create(false);
 
     // List the available drives, excluding ROM drives.
     cout << "Listing drives..." << endl;
@@ -197,14 +198,14 @@ int main(int argc, char **argv) {
     }
 
     // Work out how much we're backing up and print the summary.
-    auto totalSize = std::accumulate(files.begin(), files.end(), 0ULL,
-        [](unsigned long long sum, const PlpDirent& file) {
+    off_t totalSize = std::accumulate(files.begin(), files.end(), 0ULL,
+        [](off_t sum, const PlpDirent& file) {
             return sum + file.getSize();
         });
     cout << "Backing up " << files.size() << " files (" << totalSize << " bytes)..." << endl;
 
     // Copy the files.
-    size_t completedSize = 0;
+    off_t completedSize = 0;
     for (const PlpDirent &file : files) {
 
         // Determine the destination path.
@@ -218,7 +219,6 @@ int main(int argc, char **argv) {
                 cout << "Failed to create directory '" << destinationPath << "'." << endl;
                 return EXIT_FAILURE;
             }
-            log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
         } else {
             // Copy file.
             log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
@@ -240,14 +240,152 @@ int main(int argc, char **argv) {
                 return EXIT_FAILURE;
             }
             completedSize += file.getSize();
-            log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
         }
+        log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
     }
 
     cout << "\n";
+}
+
+struct BackupEntry {
+    std::string localPath;
+    std::string remotePath;
+    bool isDirectory;
+    off_t size;
+};
+
+int restore(RFSV *rfsv, const std::string &backupPath) {
+    cout << "Restoring..." << endl;
+    int result = 0;
+
+    std::vector<std::string> driveLetters;
+    std::vector<HostDirectoryEntry> drivePaths;
+    if ((result = dir(backupPath, false, drivePaths)) != 0) {
+        cout << "Failed to list drives to restore with error '" << strerror(result) << "'." << endl;
+        return EXIT_FAILURE;
+    }
+    for (const auto &drivePath : drivePaths) {
+        std::string driveLetter = drivePath.path.substr(backupPath.length() + 1);
+        driveLetters.push_back(driveLetter);
+    }
+
+    std::vector<BackupEntry> backupEntries;
+    for (const auto &driveLetter : driveLetters) {
+        auto drivePath = Path::appending_component(backupPath, driveLetter, Path::kHostSeparator);
+        cout << driveLetter << endl;
+        std::vector<HostDirectoryEntry> files;
+        if ((result = dir(drivePath, true, files)) != 0) {
+            cout << "Failed to list directory with error '" << strerror(result) << "'." << endl;
+            return EXIT_FAILURE;
+        }
+        for (const auto &file : files) {
+            std::string relativePath = file.path.substr(drivePath.length() + 1);
+            auto relativePathComponents = Path::split(relativePath, Path::kHostSeparator);
+            std::string remotePath = Path::appending_components(driveLetter + ":", relativePathComponents, Path::kEPOCSeparator);
+            backupEntries.push_back(BackupEntry({file.path, remotePath, file.isDirectory, file.size}));
+        }
+    }
+
+    // Work out how much we're restoring up and print the summary.
+    off_t totalSize = std::accumulate(backupEntries.begin(), backupEntries.end(), 0,
+        [](off_t sum, const BackupEntry& entry) {
+            return sum + entry.size;
+        });
+    cout << "Restoring up " << backupEntries.size() << " files (" << totalSize << " bytes)..." << endl;
+
+    off_t completedSize = 0;
+    for (const auto &backupEntry : backupEntries) {
+
+        Enum<RFSV::errs> result;
+        if (backupEntry.isDirectory) {
+            result = rfsv->mkdir(backupEntry.remotePath.c_str());
+            if (result != RFSV::E_PSI_GEN_NONE && result != RFSV::E_PSI_FILE_EXIST) {
+                cout << "\nFailed to create directory '" << backupEntry.remotePath << "' with error '" << result << "'." << endl;
+                return EXIT_FAILURE;
+            }
+        } else {
+            ProgressCallbackContext context = ProgressCallbackContext{backupEntry.remotePath, totalSize, completedSize};
+            result = rfsv->copyToPsion(
+                backupEntry.localPath.c_str(),
+               backupEntry.remotePath.c_str(),
+               static_cast<void *>(&context),
+               [](void *context, uint32_t size) {
+                   ProgressCallbackContext *progressContext = static_cast<ProgressCallbackContext *>(context);
+                   log_progress(
+                       progressContext->path_,
+                       progressContext->completedSize_ + size,
+                       progressContext->totalSize_);
+                   return 1;
+                       });
+            if (result != RFSV::E_PSI_GEN_NONE) {
+                cout << "\nFailed to copy file '" << backupEntry.remotePath << "' with error '" << result << "'." << endl;
+                return EXIT_FAILURE;
+            }
+            completedSize += backupEntry.size;
+        }
+        log_progress(backupEntry.remotePath, static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
+
+    }
+}
+
+int main(int argc, char **argv) {
+
+    string host = "127.0.0.1";
+    int sockNum = cli_utils::lookup_default_port();
+
+    setlocale(LC_ALL, "");
+    textdomain(PACKAGE);
+
+    while (1) {
+        int c = getopt_long(argc, argv, "hVp:", opts, NULL);
+        if (c == -1)
+            break;
+        switch (c) {
+            case '?':
+                usage();
+                return EXIT_FAILURE;
+            case 'V':
+                cout << _("plpftp Version ") << VERSION << endl;
+                return EXIT_SUCCESS;
+            case 'h':
+                help();
+                return EXIT_SUCCESS;
+            case 'p':
+                if (!cli_utils::parse_port(optarg, &host, &sockNum)) {
+                    cout << _("Invalid port definition.") << endl;
+                    return 1;
+                }
+                break;
+        }
+    }
+    if (argc - optind != 2) {
+        usage();
+        return EXIT_FAILURE;
+    }
+    std::string command = argv[optind];
+    if (command != "backup" && command != "restore") {
+        usage();
+        return EXIT_FAILURE;
+    }
+    std::string backupPath = argv[optind + 1];
+    backupPath = Path::resolve_path(backupPath, Path::get_cwd(), Path::kHostSeparator);
+
+    backupHeader();
+
+    RFSV *rfsv = nullptr;
+    if ((rfsv = RFSV::connect(host, sockNum)) == nullptr) {
+        cout << _("Could not connect to ncpd.") << endl;
+        return EXIT_FAILURE;
+    }
+
+    int result = EXIT_SUCCESS;
+    if (command == "backup") {
+        result = backup(rfsv, backupPath);
+    } else if (command == "restore") {
+        result = restore(rfsv, backupPath);
+    }
 
     delete rfsv;
-    delete rf;
 
-    return EXIT_SUCCESS;
+    return result;
 }

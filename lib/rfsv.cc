@@ -27,6 +27,7 @@
 #include "Enum.h"
 #include "plpdirent.h"
 #include "rfsv.h"
+#include "rfsvfactory.h"
 #include "tcpsocket.h"
 
 using namespace std;
@@ -108,6 +109,16 @@ ENUM_DEFINITION_BEGIN(RFSV::errs, RFSV::E_PSI_GEN_NONE)
     stringRep.add(RFSV::E_PSI_INTERNAL,        N_("libplp internal error"));
 ENUM_DEFINITION_END(RFSV::errs)
 
+RFSV *RFSV::connect(const std::string &host, const int port) {
+    TCPSocket *socket = new TCPSocket();
+    if (!socket->connect(host.c_str(), port)) {
+        return nullptr;
+    }
+    rfsvfactory *rf = new rfsvfactory(socket);
+    RFSV *rfsv = rf->create(false);
+    delete rf;
+    return rfsv;
+}
 
 const char *RFSV::getConnectName(void) {
     return "SYS$RFSV";

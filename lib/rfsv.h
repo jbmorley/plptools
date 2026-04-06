@@ -219,6 +219,16 @@ public:
     void reconnect();
 
     /**
+    * Create a new @ref RFSV instance by connecting to a running ncpd on host, @p host, and port,
+    * @p port.
+    *
+    * There must be an active NCP link / connection to a Psion for this method to succeed.
+    *
+    * @return One of @ref RFSV16 or @ref RFSV32 in the case of a successful connection; NULL otherwise.
+    */
+    static RFSV *connect(const std::string &host, const int port);
+
+    /**
     * Retrieves the current connection status.
     *
     * @returns The status of the connection.
