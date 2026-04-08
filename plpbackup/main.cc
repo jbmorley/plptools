@@ -26,7 +26,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <drive.h>
-#include <path.h>
+#include <pathutils.h>
 #include <plpdirent.h>
 #include <plpintl.h>
 #include <rclip.h>
@@ -112,7 +112,7 @@ int dir(const std::string &path, const bool recursive, std::vector<HostDirectory
         if (entry->d_name[0] == '.') {  // TODO: Do we want to ignore all hidden files?
             continue;
         }
-        children.push_back(Path::appending_component(path, entry->d_name, Path::kHostSeparator));
+        children.push_back(pathutils::appending_component(path, entry->d_name, pathutils::kHostSeparator));
     }
     closedir(directory);
 
@@ -190,7 +190,7 @@ int backup(RFSV *rfsv, std::string backupPath) {
     for (const auto &drive : drives) {
         std::string letter;
         letter += drive.getDriveLetter();
-        std::string drivePath = Path::appending_component(backupPath, letter, Path::kHostSeparator);
+        std::string drivePath = pathutils::appending_component(backupPath, letter, pathutils::kHostSeparator);
         if (mkdir(drivePath.c_str(), 0755) != 0) {
             cout << "Failed to create directory '" << drivePath << "'." << endl;
             return EXIT_FAILURE;
@@ -209,9 +209,9 @@ int backup(RFSV *rfsv, std::string backupPath) {
     for (const PlpDirent &file : files) {
 
         // Determine the destination path.
-        std::vector<std::string> components = Path::split(file.getPath(), Path::kEPOCSeparator);
+        std::vector<std::string> components = pathutils::split(file.getPath(), pathutils::kEPOCSeparator);
         components[0] = components[0][0];  // Remove the colon from the drive letter.
-        std::string destinationPath = Path::appending_components(backupPath, components, Path::kHostSeparator);
+        std::string destinationPath = pathutils::appending_components(backupPath, components, pathutils::kHostSeparator);
 
         if (file.isDirectory()) {
             // Create directory.
@@ -271,7 +271,7 @@ int restore(RFSV *rfsv, const std::string &backupPath) {
 
     std::vector<BackupEntry> backupEntries;
     for (const auto &driveLetter : driveLetters) {
-        auto drivePath = Path::appending_component(backupPath, driveLetter, Path::kHostSeparator);
+        auto drivePath = pathutils::appending_component(backupPath, driveLetter, pathutils::kHostSeparator);
         cout << driveLetter << endl;
         std::vector<HostDirectoryEntry> files;
         if ((result = dir(drivePath, true, files)) != 0) {
@@ -280,8 +280,8 @@ int restore(RFSV *rfsv, const std::string &backupPath) {
         }
         for (const auto &file : files) {
             std::string relativePath = file.path.substr(drivePath.length() + 1);
-            auto relativePathComponents = Path::split(relativePath, Path::kHostSeparator);
-            std::string remotePath = Path::appending_components(driveLetter + ":", relativePathComponents, Path::kEPOCSeparator);
+            auto relativePathComponents = pathutils::split(relativePath, pathutils::kHostSeparator);
+            std::string remotePath = pathutils::appending_components(driveLetter + ":", relativePathComponents, pathutils::kEPOCSeparator);
             backupEntries.push_back(BackupEntry({file.path, remotePath, file.isDirectory, file.size}));
         }
     }
@@ -368,7 +368,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     std::string backupPath = argv[optind + 1];
-    backupPath = Path::resolve_path(backupPath, Path::get_cwd(), Path::kHostSeparator);
+    backupPath = pathutils::resolve_path(backupPath, pathutils::get_cwd(), pathutils::kHostSeparator);
 
     backupHeader();
 

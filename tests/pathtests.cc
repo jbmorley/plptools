@@ -23,129 +23,129 @@
 #include <stdio.h>
 
 #include "doctest.h"
-#include "path.h"
+#include "pathutils.h"
 
-TEST_CASE("Path::ensuring_trailing_separator") {
+TEST_CASE("pathutils::ensuring_trailing_separator") {
 
-    CHECK(Path::ensuring_trailing_separator("", Path::kEPOCSeparator) == "\\");
-    CHECK(Path::ensuring_trailing_separator("\\", Path::kEPOCSeparator) == "\\");
-    CHECK(Path::ensuring_trailing_separator("C:", Path::kEPOCSeparator) == "C:\\");
-    CHECK(Path::ensuring_trailing_separator("C:\\", Path::kEPOCSeparator) == "C:\\");
+    CHECK(pathutils::ensuring_trailing_separator("", pathutils::kEPOCSeparator) == "\\");
+    CHECK(pathutils::ensuring_trailing_separator("\\", pathutils::kEPOCSeparator) == "\\");
+    CHECK(pathutils::ensuring_trailing_separator("C:", pathutils::kEPOCSeparator) == "C:\\");
+    CHECK(pathutils::ensuring_trailing_separator("C:\\", pathutils::kEPOCSeparator) == "C:\\");
 
     // N.B. These tests assume a POSIX host and will need updating for future Windows support.
-    CHECK(Path::ensuring_trailing_separator("", Path::kHostSeparator) == "/");
-    CHECK(Path::ensuring_trailing_separator("/", Path::kHostSeparator) == "/");
-    CHECK(Path::ensuring_trailing_separator("/mnt", Path::kHostSeparator) == "/mnt/");
-    CHECK(Path::ensuring_trailing_separator("/mnt/", Path::kHostSeparator) == "/mnt/");
+    CHECK(pathutils::ensuring_trailing_separator("", pathutils::kHostSeparator) == "/");
+    CHECK(pathutils::ensuring_trailing_separator("/", pathutils::kHostSeparator) == "/");
+    CHECK(pathutils::ensuring_trailing_separator("/mnt", pathutils::kHostSeparator) == "/mnt/");
+    CHECK(pathutils::ensuring_trailing_separator("/mnt/", pathutils::kHostSeparator) == "/mnt/");
 
     // Unsupported path normalization and separator conversion.
-    CHECK(Path::ensuring_trailing_separator("/mnt/", Path::kEPOCSeparator) == "/mnt/\\");
-    CHECK(Path::ensuring_trailing_separator("C:\\", Path::kHostSeparator) == "C:\\/");
-    CHECK(Path::ensuring_trailing_separator("C:\\\\", Path::kEPOCSeparator) == "C:\\\\");
-    CHECK(Path::ensuring_trailing_separator("/mnt//", Path::kHostSeparator) == "/mnt//");
+    CHECK(pathutils::ensuring_trailing_separator("/mnt/", pathutils::kEPOCSeparator) == "/mnt/\\");
+    CHECK(pathutils::ensuring_trailing_separator("C:\\", pathutils::kHostSeparator) == "C:\\/");
+    CHECK(pathutils::ensuring_trailing_separator("C:\\\\", pathutils::kEPOCSeparator) == "C:\\\\");
+    CHECK(pathutils::ensuring_trailing_separator("/mnt//", pathutils::kHostSeparator) == "/mnt//");
 }
 
-TEST_CASE("Path::getEPOCBasename") {
-    CHECK(Path::getEPOCBasename("C:\\Random") == "Random");
-    CHECK(Path::getEPOCBasename("C:\\Documents\\foo.txt") == "foo.txt");
+TEST_CASE("pathutils::epoc_basename") {
+    CHECK(pathutils::epoc_basename("C:\\Random") == "Random");
+    CHECK(pathutils::epoc_basename("C:\\Documents\\foo.txt") == "foo.txt");
 
     // Legacy behavior (might be a bug).
-    CHECK(Path::getEPOCBasename("C:\\Random\\") == "");
+    CHECK(pathutils::epoc_basename("C:\\Random\\") == "");
 }
 
 // TODO: Rename to get parent path?
-TEST_CASE("Path::getEPOCDirname") {
+TEST_CASE("pathutils::epoc_dirname") {
     SUBCASE("C:\\Random") {
         std::string result;
-        result = Path::getEPOCDirname("C:\\Random");
+        result = pathutils::epoc_dirname("C:\\Random");
         CHECK(result == "C:\\");
     }
     SUBCASE("C:\\Random\\") {
         std::string result;
-        result = Path::getEPOCDirname("C:\\Random\\");
+        result = pathutils::epoc_dirname("C:\\Random\\");
         CHECK(result == "C:\\");
     }
     SUBCASE("C:\\Documents\\foo.txt") {
         std::string result;
-        result = Path::getEPOCDirname("C:\\Documents\\foo.txt");
+        result = pathutils::epoc_dirname("C:\\Documents\\foo.txt");
         CHECK(result == "C:\\Documents");
     }
     SUBCASE("C:\\") {
         std::string result;
-        result = Path::getEPOCDirname("C:\\");
+        result = pathutils::epoc_dirname("C:\\");
         CHECK(result == "C:");
     }
 
     // Legacy behavior (might be a bug).
     SUBCASE("C:") {
         std::string result;
-        result = Path::getEPOCDirname("C:");
+        result = pathutils::epoc_dirname("C:");
         CHECK(result == "C");
     }
 }
 
-TEST_CASE("Path::is_absolute") {
+TEST_CASE("pathutils::is_absolute") {
 
-    CHECK(Path::is_absolute("C:\\", '\\') == true);
-    CHECK(Path::is_absolute("C:\\", '/') == false);
+    CHECK(pathutils::is_absolute("C:\\", '\\') == true);
+    CHECK(pathutils::is_absolute("C:\\", '/') == false);
 
-    CHECK(Path::is_absolute("C:", '\\') == true);
-    CHECK(Path::is_absolute("C:", '/') == false);
+    CHECK(pathutils::is_absolute("C:", '\\') == true);
+    CHECK(pathutils::is_absolute("C:", '/') == false);
 
-    CHECK(Path::is_absolute("", '\\') == false);
-    CHECK(Path::is_absolute("", '/') == false);
+    CHECK(pathutils::is_absolute("", '\\') == false);
+    CHECK(pathutils::is_absolute("", '/') == false);
 
-    CHECK(Path::is_absolute("foo", '\\') == false);
-    CHECK(Path::is_absolute("foo", '/') == false);
-    CHECK(Path::is_absolute("foo\\bar", '\\') == false);
-    CHECK(Path::is_absolute("foo/bar", '/') == false);
+    CHECK(pathutils::is_absolute("foo", '\\') == false);
+    CHECK(pathutils::is_absolute("foo", '/') == false);
+    CHECK(pathutils::is_absolute("foo\\bar", '\\') == false);
+    CHECK(pathutils::is_absolute("foo/bar", '/') == false);
 
-    CHECK(Path::is_absolute("\\C:\\", '\\') == false);
-    CHECK(Path::is_absolute("/C:/", '/') == true);
+    CHECK(pathutils::is_absolute("\\C:\\", '\\') == false);
+    CHECK(pathutils::is_absolute("/C:/", '/') == true);
 }
 
-TEST_CASE("Path::appending_components") {
-    CHECK(Path::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
-    CHECK(Path::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
+TEST_CASE("pathutils::appending_components") {
+    CHECK(pathutils::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
+    CHECK(pathutils::appending_components("C:\\", {"Documents"}, '\\') == "C:\\Documents");
 }
 
-TEST_CASE("Path::split") {
-    CHECK(Path::split("", '\\') == std::vector<std::string>({}));
-    CHECK(Path::split("one\\two\\three", '\\') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("one\\two\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("one\\two\\\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("C:\\one\\two\\\\three\\", '\\') == std::vector<std::string>({"C:", "one", "two", "three"}));
+TEST_CASE("pathutils::split") {
+    CHECK(pathutils::split("", '\\') == std::vector<std::string>({}));
+    CHECK(pathutils::split("one\\two\\three", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("one\\two\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("one\\two\\\\three\\", '\\') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("C:\\one\\two\\\\three\\", '\\') == std::vector<std::string>({"C:", "one", "two", "three"}));
 
-    CHECK(Path::split("", '/') == std::vector<std::string>({}));
-    CHECK(Path::split("one/two/three", '/') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("one/two/three/", '/') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("one/two//three/", '/') == std::vector<std::string>({"one", "two", "three"}));
-    CHECK(Path::split("/one/two/three/", '/') == std::vector<std::string>({"/", "one", "two", "three"}));
+    CHECK(pathutils::split("", '/') == std::vector<std::string>({}));
+    CHECK(pathutils::split("one/two/three", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("one/two/three/", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("one/two//three/", '/') == std::vector<std::string>({"one", "two", "three"}));
+    CHECK(pathutils::split("/one/two/three/", '/') == std::vector<std::string>({"/", "one", "two", "three"}));
 }
 
-TEST_CASE("Path::join") {
-    CHECK(Path::join({""}, '/') == "");
-    CHECK(Path::join({"hello"}, '/') == "hello");
-    CHECK(Path::join({"hello", "world"}, '/') == "hello/world");
-    CHECK(Path::join({"/hello", "world"}, '/') == "/hello/world");
-    CHECK(Path::join({"/", "hello", "world"}, '/') == "/hello/world");
-    CHECK(Path::join({"hello", "world"}, '\\') == "hello\\world");
-    CHECK(Path::join({"C:\\hello", "world"}, '\\') == "C:\\hello\\world");
-    CHECK(Path::join({"C:\\", "hello", "world"}, '\\') == "C:\\hello\\world");
-    CHECK(Path::join({"C:", "hello", "world"}, '\\') == "C:\\hello\\world");
+TEST_CASE("pathutils::join") {
+    CHECK(pathutils::join({""}, '/') == "");
+    CHECK(pathutils::join({"hello"}, '/') == "hello");
+    CHECK(pathutils::join({"hello", "world"}, '/') == "hello/world");
+    CHECK(pathutils::join({"/hello", "world"}, '/') == "/hello/world");
+    CHECK(pathutils::join({"/", "hello", "world"}, '/') == "/hello/world");
+    CHECK(pathutils::join({"hello", "world"}, '\\') == "hello\\world");
+    CHECK(pathutils::join({"C:\\hello", "world"}, '\\') == "C:\\hello\\world");
+    CHECK(pathutils::join({"C:\\", "hello", "world"}, '\\') == "C:\\hello\\world");
+    CHECK(pathutils::join({"C:", "hello", "world"}, '\\') == "C:\\hello\\world");
 }
 
-TEST_CASE("Path::resolve_path") {
+TEST_CASE("pathutils::resolve_path") {
 
     // Posix.
-    CHECK(Path::resolve_path("/foo/bar/baz", "", '/') == "/foo/bar/baz");
-    CHECK(Path::resolve_path("/foo/bar/baz", "/one/two", '/') == "/foo/bar/baz");
-    CHECK(Path::resolve_path("baz", "/foo/bar", '/') == "/foo/bar/baz");
-    CHECK(Path::resolve_path("../baz", "/foo/bar", '/') == "/foo/baz");
+    CHECK(pathutils::resolve_path("/foo/bar/baz", "", '/') == "/foo/bar/baz");
+    CHECK(pathutils::resolve_path("/foo/bar/baz", "/one/two", '/') == "/foo/bar/baz");
+    CHECK(pathutils::resolve_path("baz", "/foo/bar", '/') == "/foo/bar/baz");
+    CHECK(pathutils::resolve_path("../baz", "/foo/bar", '/') == "/foo/baz");
 
     // Windows (and EPOC).
-    CHECK(Path::resolve_path("C:\\foo\\bar\\baz", "", '\\') == "C:\\foo\\bar\\baz");
-    CHECK(Path::resolve_path("C:\\foo\\bar\\baz", "C:\\one\\two", '\\') == "C:\\foo\\bar\\baz");
-    CHECK(Path::resolve_path("baz", "C:\\foo\\bar", '\\') == "C:\\foo\\bar\\baz");
-    CHECK(Path::resolve_path("..\\baz", "D:\\foo\\bar", '\\') == "D:\\foo\\baz");
+    CHECK(pathutils::resolve_path("C:\\foo\\bar\\baz", "", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(pathutils::resolve_path("C:\\foo\\bar\\baz", "C:\\one\\two", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(pathutils::resolve_path("baz", "C:\\foo\\bar", '\\') == "C:\\foo\\bar\\baz");
+    CHECK(pathutils::resolve_path("..\\baz", "D:\\foo\\bar", '\\') == "D:\\foo\\baz");
 }

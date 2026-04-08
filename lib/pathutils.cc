@@ -23,14 +23,14 @@
 
 #include "config.h"
 
-#include "path.h"
+#include "pathutils.h"
 
 #include "xalloc.h"
 #include "xvasprintf.h"
 #include <string>
 #include <unistd.h>
 
-std::string Path::getEPOCBasename(std::string path) {
+std::string pathutils::epoc_basename(std::string path) {
     size_t end = path.find_last_of("\\");
     if (end == std::string::npos) {
         return std::string(path);
@@ -38,7 +38,7 @@ std::string Path::getEPOCBasename(std::string path) {
     return path.substr(end+1);
 }
 
-char *Path::getEPOCDirname(const char *path) {
+char *pathutils::epoc_dirname(const char *path) {
     char *f1 = xstrdup(path);
     char *p = f1 + strlen(f1);
 
@@ -64,7 +64,7 @@ char *Path::getEPOCDirname(const char *path) {
 }
 
 // TODO: This isn't safe.
-std::string Path::get_cwd() {
+std::string pathutils::get_cwd() {
     char buf[PATH_MAX];
     std::string cwd;
     if (getcwd(buf, sizeof(buf))) {
@@ -73,12 +73,12 @@ std::string Path::get_cwd() {
     return cwd;
 }
 
-char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
+char *pathutils::resolve_epoc_path(const char *path, const char *relativeToPath) {
     char *f1;
 
     // If we have asked for parent dir, get dirname of cwd.
     if (!strcmp(path, "..")) {
-        f1 = getEPOCDirname(relativeToPath);
+        f1 = epoc_dirname(relativeToPath);
     } else {
         if ((path[0] != '/') && (path[0] != '\\') && (path[1] != ':')) {
             // If path is relative, append it to cwd.
@@ -99,7 +99,7 @@ char *Path::resolveEPOCPath(const char *path, const char *relativeToPath) {
     return f1;
 }
 
-std::vector<std::string> Path::split(const std::string string, const char separator) {
+std::vector<std::string> pathutils::split(const std::string string, const char separator) {
     std::vector<std::string> result;
     size_t offset = 0;
     size_t index = 0;
@@ -121,7 +121,7 @@ std::vector<std::string> Path::split(const std::string string, const char separa
     return result;
 }
 
-std::string Path::join(const std::vector<std::string> &components, const char separator) {
+std::string pathutils::join(const std::vector<std::string> &components, const char separator) {
     std::string result;
     for (const auto &component : components) {
         if (!result.empty() && result.back() != separator) {
@@ -133,9 +133,9 @@ std::string Path::join(const std::vector<std::string> &components, const char se
 }
 
 // TODO: Do we need these??
-std::string Path::appending_components(const std::string &path,
-                                       const std::vector<std::string> &components,
-                                       const char separator) {
+std::string pathutils::appending_components(const std::string &path,
+                                            const std::vector<std::string> &components,
+                                            const char separator) {
     std::string result = path;
     for (const auto &component : components) {
         if (result.empty() || result.back() != separator) {
@@ -146,13 +146,13 @@ std::string Path::appending_components(const std::string &path,
     return result;
 }
 
-std::string Path::appending_component(const std::string &path,
-                                      const std::string component,
-                                      const char separator) {
+std::string pathutils::appending_component(const std::string &path,
+                                           const std::string component,
+                                           const char separator) {
     return appending_components(path, {component}, separator);
 }
 
-std::string Path::ensuring_trailing_separator(const std::string &path,
+std::string pathutils::ensuring_trailing_separator(const std::string &path,
                                               const char separator) {
     if (!path.empty() && path.back() == separator) {
         return path;
@@ -160,7 +160,7 @@ std::string Path::ensuring_trailing_separator(const std::string &path,
     return path + separator;
 }
 
-bool Path::is_root(const std::string &pathComponent, const char separator) {
+bool pathutils::is_root(const std::string &pathComponent, const char separator) {
     if (separator == '/' && pathComponent.length() == 1 && pathComponent[0] == separator) {
         return true;
     } else if (separator == '\\' && pathComponent.length() == 2) {
@@ -170,7 +170,7 @@ bool Path::is_root(const std::string &pathComponent, const char separator) {
     }
 }
 
-bool Path::is_absolute(const std::string &path, const char separator) {
+bool pathutils::is_absolute(const std::string &path, const char separator) {
     auto components = split(path, separator);
     if (components.empty()) {
         return false;
@@ -178,9 +178,9 @@ bool Path::is_absolute(const std::string &path, const char separator) {
     return is_root(components.front(), separator);
 }
 
-std::string Path::resolve_path(const std::string &path,
-                               const std::string &startingPath,
-                               const char separator) {
+std::string pathutils::resolve_path(const std::string &path,
+                                    const std::string &startingPath,
+                                    const char separator) {
     std::vector<std::string> pathComponents = split(path, separator);
     std::vector<std::string> startingPathComponents = split(startingPath, separator);
 
@@ -198,5 +198,5 @@ std::string Path::resolve_path(const std::string &path,
         }
     }
 
-    return Path::join(startingPathComponents, separator);
+    return pathutils::join(startingPathComponents, separator);
 }
