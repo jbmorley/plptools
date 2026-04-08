@@ -132,24 +132,19 @@ std::string pathutils::join(const std::vector<std::string> &components, const ch
     return result;
 }
 
-// TODO: Do we need these??
 std::string pathutils::appending_components(const std::string &path,
-                                            const std::vector<std::string> &components,
+                                            const std::vector<std::string> &_components,
                                             const char separator) {
-    std::string result = path;
-    for (const auto &component : components) {
-        if (result.empty() || result.back() != separator) {
-            result += separator;
-        }
-        result += component;
-    }
-    return result;
+    std::vector<std::string> components = {path};
+    components.insert(components.end(), _components.begin(), _components.end());
+    return join(components, separator);
 }
 
 std::string pathutils::appending_component(const std::string &path,
                                            const std::string component,
                                            const char separator) {
-    return appending_components(path, {component}, separator);
+    std::vector<std::string> components = {path, component};
+    return join(components, separator);
 }
 
 std::string pathutils::ensuring_trailing_separator(const std::string &path,
