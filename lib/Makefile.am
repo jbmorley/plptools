@@ -66,7 +66,8 @@ libplp_la_SOURCES = \
 	sistypes.cpp \
 	socketchannel.cc \
 	tcpsocket.cc \
-	wprt.cc
+	wprt.cc \
+	json.hpp
 
 noinst_HEADERS = \
 	bufferarray.h \
