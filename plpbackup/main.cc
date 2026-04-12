@@ -152,22 +152,22 @@ void log_progress(const std::string &path, float_t completedSize, float_t totalS
     cout << "\r\033[2K" << "[" << std::setw(3) << std::right << static_cast<int>(progress * 100) << "%] " << path << std::flush;
 }
 
-static std::string iso8601_now() {
-    auto now = chrono::system_clock::now();
-    return date::format("%FT%TZ", date::floor<chrono::seconds>(now));
-}
+// static std::string iso8601_now() {
+//     auto now = chrono::system_clock::now();
+//     return date::format("%FT%TZ", date::floor<chrono::seconds>(now));
+// }
 
 int backup(RFSV *rfsv, std::string backupPath) {
 
     std::string manifestPath = pathutils::appending_components(backupPath, {"manifest.json"}, pathutils::PathFormat::kHost);
     cout << manifestPath << endl;
 
-    json device = { { "id", "1234" }, { "name": "cheese" } };
-    std::string platform = "epoc16";
-    std::string timestamp = iso8601_now();
-    json drives;
-    drives.push_back({ { "drive": "A" }, { "mediaType", "cheese" }, { "driveAttributes", "boo" }, { "name": "random" } });
-    json manifest = { { "device", device }, { "platform", platform }, { "timestamp", timestamp }, { "drives": drives } };
+    // json device = { { "id", "1234" }, { "name": "cheese" } };
+    // std::string platform = "epoc16";
+    // std::string timestamp = iso8601_now();
+    // json drives;
+    // drives.push_back({ { "drive": "A" }, { "mediaType", "cheese" }, { "driveAttributes", "boo" }, { "name": "random" } });
+    // json manifest = { { "device", device }, { "platform", platform }, { "timestamp", timestamp }, { "drives": drives } };
 
     // TODO: Next step is probably to register the device type.
 
@@ -179,10 +179,10 @@ int backup(RFSV *rfsv, std::string backupPath) {
     // date { iso8601 }
     // drives { { drive, mediaType, driveAttributes, name? } }
 
-    manifest.push_back({ {"device": "value"}, {"key2", "value2"} });
-    cout << manifest.dump() << endl;
-
-    return EXIT_SUCCESS;
+//     manifest.push_back({ {"device": "value"}, {"key2", "value2"} });
+//     cout << manifest.dump() << endl;
+//
+//     return EXIT_SUCCESS;
 
     // Create the destination directory.
     if (mkdir(backupPath.c_str(), 0755) != 0) {
