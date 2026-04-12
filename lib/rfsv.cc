@@ -114,7 +114,7 @@ RFSV *RFSV::connect(const std::string &host, const int port) {
     if (!socket->connect(host.c_str(), port)) {
         return nullptr;
     }
-    rfsvfactory *rf = new rfsvfactory(socket);
+    RFSVFactory *rf = new RFSVFactory(socket);
     RFSV *rfsv = rf->create(false);
     delete rf;
     return rfsv;
