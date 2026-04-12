@@ -17,21 +17,29 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#ifndef _FAKEPSION_H
-#define _FAKEPSION_H
 
-#include "psion.h"
+#pragma once
+
+#include <Enum.h>
+#include "rfsv.h"
+
+class TCPSocket;
+class RFSVFactory;
+class RPCSFactory;
+class RPCS;
 
 /**
- * A dummy version of the Psion proxy, mainly for testing the installer.
+ * Semi smart proxy for communicating with a Psion.
  */
-class FakePsion : public Psion
-{
+class Psion {
 public:
 
-    virtual ~FakePsion();
+    virtual ~Psion();
 
     virtual bool connect();
+
+    virtual Enum<RFSV::errs> copyFromPsion(const char * const from, int fd,
+                                           cpCallback_t func);
 
     virtual Enum<RFSV::errs> copyToPsion(const char * const from,
                                          const char * const to,
@@ -51,7 +59,13 @@ public:
 
     virtual void remove(const char* name);
 
+private:
+
+    TCPSocket* rfsvSocket_;
+    TCPSocket* rpcsSocket_;
+    RFSVFactory* rfsvFactory_;
+    RPCSFactory* rpcsFactory_;
+    RPCS* rpcs_;
+    RFSV* rfsv_;
+
 };
-
-#endif
-

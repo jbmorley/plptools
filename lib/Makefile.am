@@ -35,6 +35,7 @@ libplp_la_SOURCES = \
 	datalink.cc \
 	drive.cc \
 	Enum.cc \
+	fakepsion.cc \
 	iowatch.cc \
 	link.cc \
 	linkchannel.cc \
@@ -43,9 +44,10 @@ libplp_la_SOURCES = \
 	ncp_log.cc \
 	ncp.cc \
 	ncpsession.cc \
-	path.cc \
+	pathutils.cc \
 	plpdirent.cc \
 	psibitmap.cpp \
+	psion.cpp \
 	psiprocess.cc \
 	psitime.cc \
 	rclip.cc \
@@ -76,6 +78,7 @@ noinst_HEADERS = \
 	datalink.h \
 	drive.h \
 	Enum.h \
+	fakepsion.h \
 	iowatch.h \
 	link.h  \
 	linkchannel.h \
@@ -85,10 +88,11 @@ noinst_HEADERS = \
 	ncp.h \
 	ncpsession.h \
 	ncpstatuscallback.h \
-	path.h \
+	pathutils.h \
 	plpdirent.h \
 	plpintl.h \
 	psibitmap.h \
+	psion.h \
 	psiprocess.h \
 	psitime.h \
 	rclip.h \

@@ -23,7 +23,7 @@
 
 #include "plpdirent.h"
 
-#include "path.h"
+#include "pathutils.h"
 
 #include <cstdint>
 #include <iomanip>
@@ -91,12 +91,12 @@ PlpUID &PlpDirent::getUID() {
 }
 
 std::string PlpDirent::getPath() const {
-    std::string path = Path::ensuring_trailing_separator(dirname_, Path::kEPOCSeparator) + name;
+    auto pathComponents = pathutils::split(dirname_, pathutils::PathFormat::kEPOC);
+    pathComponents.push_back(name);
     if (isDirectory()) {
-        return Path::ensuring_trailing_separator(path, Path::kEPOCSeparator);
-    } else {
-        return path;
+        pathComponents.push_back("");
     }
+    return join(pathComponents, pathutils::PathFormat::kEPOC);
 }
 
 const char *PlpDirent::getName() const {

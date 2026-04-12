@@ -43,7 +43,7 @@ let package = Package(
                 "lib/Enum.cc",
                 "lib/iowatch.cc",
                 "lib/log.cc",
-                "lib/path.cc",
+                "lib/pathutils.cc",
                 "lib/plpdirent.cc",
                 "lib/psiprocess.cc",
                 "lib/psitime.cc",

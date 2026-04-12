@@ -27,7 +27,7 @@ public:
     RFSV::errs fgetattr(const char * const name, uint32_t &attr);
 private:
     TCPSocket *_socket;
-    rfsvfactory *_rfsvfactory;
+    RFSVFactory *_rfsvfactory;
     RFSV *_rfsv;
 };
 

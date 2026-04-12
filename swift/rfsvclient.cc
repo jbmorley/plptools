@@ -26,7 +26,7 @@ bool RFSVClient::connect(const char * const Peer, int PeerPort) {
     if (!_socket->connect(Peer, PeerPort)) {
         return false;
     }
-    _rfsvfactory = new rfsvfactory(_socket);
+    _rfsvfactory = new RFSVFactory(_socket);
     _rfsv = _rfsvfactory->create(true);
     if (!_rfsv) {
         return false;

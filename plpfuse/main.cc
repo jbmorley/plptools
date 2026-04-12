@@ -53,10 +53,10 @@
 using namespace std;
 
 static RFSV *a;
-static rfsvfactory *rf;
+static RFSVFactory *rf;
 
 static RPCS *r;
-static rpcsfactory *rp;
+static RPCSFactory *rp;
 static BufferStore owner;
 
 /* Translate EPOC/SIBO error to UNIX error code, leaving positive
@@ -429,8 +429,8 @@ int main(int argc, char**argv) {
         return 1;
     }
 
-    rf = new rfsvfactory(skt);
-    rp = new rpcsfactory(skt2);
+    rf = new RFSVFactory(skt);
+    rp = new RPCSFactory(skt2);
     a = rf->create(true);
     r = rp->create(true);
     if (a != NULL && r != NULL)

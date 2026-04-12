@@ -18,7 +18,7 @@ public:
     RFSV::errs stopPrograms();
 private:
     TCPSocket *_socket;
-    rpcsfactory *_rpcsfactory;
+    RPCSFactory *_rpcsfactory;
     RPCS *_rpcs;
 };
 

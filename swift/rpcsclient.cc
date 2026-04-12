@@ -26,7 +26,7 @@ bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     if (!_socket->connect(Peer, PeerPort)) {
         return false;
     }
-    _rpcsfactory = new rpcsfactory(_socket);
+    _rpcsfactory = new RPCSFactory(_socket);
     _rpcs = _rpcsfactory->create(true);
     if (!_rpcs) {
         return false;

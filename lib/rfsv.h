@@ -77,7 +77,7 @@ private:
  * methods. The majority of implementation is provided
  * by @ref RFSV32 and @ref RFSV16 , which implement the
  * variations of the protocol for EPOC and SIBO respectively.
- * Usually, the class @ref rfsvfactory is used to instantiate
+ * Usually, the class @ref RFSVFactory is used to instantiate
  * the correct variant depending on the remote machine,
  * currently connected.
  */
@@ -660,9 +660,9 @@ protected:
     */
     const char *getConnectName();
 
-    TCPSocket *skt;
-    Enum<errs> status;
-    int32_t serNum;
+    TCPSocket *socket_;
+    Enum<errs> status_;
+    int32_t operationId_;
 };
 
 #endif
