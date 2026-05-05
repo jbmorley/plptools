@@ -23,6 +23,7 @@
 #define _RFSV_H_
 
 #include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -664,7 +665,7 @@ protected:
     */
     const char *getConnectName();
 
-    TCPSocket *socket_;
+    std::unique_ptr<TCPSocket> socket_;
     Enum<errs> status_;
     int32_t operationId_;
 };
