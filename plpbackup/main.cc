@@ -59,10 +59,14 @@ using json = nlohmann::json;
 
 static void help() {
     cout << _(
-        "Usage: plpbackup [OPTIONS]... <backup|restore> <destination>\n"
+        "Usage: plpbackup [OPTIONS]... <command> <destination>\n"
         "\n"
         "Simple one-shot backup command; performs a full, non-incremental, backup of all.\n"
         "writeable drives.\n"
+        "\n"
+        "Commands:\n"
+        "  backup\n"
+        "  restore\n"
         "\n"
         "Supported options:\n"
         "\n"
