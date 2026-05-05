@@ -19,8 +19,7 @@
  *  along with this program; if not, see <https://www.gnu.org/licenses/>.
  *
  */
-#ifndef _RFSV_H_
-#define _RFSV_H_
+#pragma once
 
 #include <deque>
 #include <memory>
@@ -28,6 +27,7 @@
 #include <vector>
 
 #include "Enum.h"
+#include "connectionerror.h"
 #include "plpdirent.h"
 #include "bufferstore.h"
 
@@ -215,19 +215,11 @@ public:
         PSI_A_TEXT       = 0x1000
     };
 
+    static RFSV *connect(const std::string &host, int port, Enum<ConnectionError> *error);
+
     virtual ~RFSV();
     void reset();
     void reconnect();
-
-    /**
-    * Create a new @ref RFSV instance by connecting to a running ncpd on host, @p host, and port,
-    * @p port.
-    *
-    * There must be an active NCP link / connection to a Psion for this method to succeed.
-    *
-    * @return One of @ref RFSV16 or @ref RFSV32 in the case of a successful connection; NULL otherwise.
-    */
-    static RFSV *connect(const std::string &host, const int port);
 
     /**
     * Retrieves the current connection status.
@@ -669,5 +661,3 @@ protected:
     Enum<errs> status_;
     int32_t operationId_;
 };
-
-#endif

@@ -94,6 +94,7 @@ noinst_HEADERS = \
 	mp_serial.h \
 	ncp_log.h \
 	ncp.h \
+	ncpclient.h \
 	ncpsession.h \
 	ncpstatuscallback.h \
 	pathutils.h \

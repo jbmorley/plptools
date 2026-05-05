@@ -22,7 +22,7 @@
 #include "config.h"
 
 #include <bufferstore.h>
-#include <cli_utils.h>
+#include <cliutils.h>
 #include <cmath>
 #include <cstdlib>
 #include <drive.h>
@@ -406,20 +406,19 @@ int main(int argc, char **argv) {
 
     backupHeader();
 
-    RFSV *rfsv = nullptr;
-    if ((rfsv = RFSV::connect(host, sockNum)) == nullptr) {
-        cout << _("Could not connect to ncpd.") << endl;
+
+    Enum<ConnectionError> error;
+    auto rfsv = std::unique_ptr<RFSV>(RFSV::connect(host, sockNum, &error));
+    if (!rfsv) {
+        cerr << "plpbackup: " << error << endl;
         return EXIT_FAILURE;
     }
-
     int result = EXIT_SUCCESS;
     if (command == "backup") {
-        result = backup(rfsv, backupPath);
+        result = backup(rfsv.get(), backupPath);
     } else if (command == "restore") {
-        result = restore(rfsv, backupPath);
+        result = restore(rfsv.get(), backupPath);
     }
-
-    delete rfsv;
 
     return result;
 }
