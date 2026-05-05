@@ -363,6 +363,7 @@ int restore(RFSV *rfsv, const std::string &backupPath) {
         log_progress(backupEntry.remotePath, static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
 
     }
+    return EXIT_SUCCESS;
 }
 
 int main(int argc, char **argv) {
