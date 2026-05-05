@@ -240,11 +240,13 @@ int backup(RFSV *rfsv, std::string backupPath) {
 
     // Copy the files.
     off_t completedSize = 0;
-    for (const PlpDirent &file : files) {
+    for (const auto &file : files) {
 
         // Determine the destination path.
-        std::vector<std::string> components = pathutils::split(file.getPath(), pathutils::PathFormat::kHost);
+        std::vector<std::string> components = pathutils::split(file.getPath(), pathutils::PathFormat::kEPOC);
+
         components[0] = components[0][0];  // Remove the colon from the drive letter.
+        components[1] = pathutils::path_separator(pathutils::PathFormat::kHost);  // Transform the root marker.
         std::string destinationPath = pathutils::appending_components(backupPath, components, pathutils::PathFormat::kHost);
 
         if (file.isDirectory()) {
@@ -257,7 +259,7 @@ int backup(RFSV *rfsv, std::string backupPath) {
             // Copy file.
             log_progress(file.getPath(), static_cast<float_t>(completedSize), static_cast<float_t>(totalSize));
             ProgressCallbackContext context = ProgressCallbackContext{file.getPath(), totalSize, completedSize};
-            RFSV::errs result = rfsv->copyFromPsion(
+            auto result = rfsv->copyFromPsion(
                 file.getPath().c_str(),
                 destinationPath.c_str(),
                 static_cast<void *>(&context),
@@ -270,7 +272,7 @@ int backup(RFSV *rfsv, std::string backupPath) {
                     return 1;
                 });
             if (result != RFSV::E_PSI_GEN_NONE) {
-                cout << "Failed to copy file '" << file.getPath() << "'." << endl;
+                cout << endl << "Failed to copy file '" << file.getPath() << "' with error '" << result << "'." << endl;
                 return EXIT_FAILURE;
             }
             completedSize += file.getSize();
@@ -279,6 +281,7 @@ int backup(RFSV *rfsv, std::string backupPath) {
     }
 
     cout << "\n";
+    return EXIT_SUCCESS;
 }
 
 struct BackupEntry {
