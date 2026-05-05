@@ -33,9 +33,11 @@ libplp_la_SOURCES = \
 	channel.cc \
 	cli_utils.cc \
 	datalink.cc \
+	deviceconfiguration.cc \
 	drive.cc \
 	Enum.cc \
 	fakepsion.cc \
+	ini.cc \
 	iowatch.cc \
 	link.cc \
 	linkchannel.cc \
@@ -68,6 +70,7 @@ libplp_la_SOURCES = \
 	sistypes.cpp \
 	socketchannel.cc \
 	tcpsocket.cc \
+	uuid.cc \
 	wprt.cc \
 	json.hpp
 
@@ -77,9 +80,11 @@ noinst_HEADERS = \
 	channel.h \
 	cli_utils.h \
 	datalink.h \
+	deviceconfiguration.h \
 	drive.h \
 	Enum.h \
 	fakepsion.h \
+	ini.h \
 	iowatch.h \
 	link.h  \
 	linkchannel.h \
@@ -114,4 +119,5 @@ noinst_HEADERS = \
 	sistypes.h \
 	socketchannel.h \
 	tcpsocket.h \
+	uuid.h \
 	wprt.h
