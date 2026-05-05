@@ -368,7 +368,7 @@ int restore(RFSV *rfsv, const std::string &backupPath) {
 int main(int argc, char **argv) {
 
     string host = "127.0.0.1";
-    int sockNum = cli_utils::lookup_default_port();
+    int port = cli_utils::lookup_default_port();
 
     setlocale(LC_ALL, "");
     textdomain(PACKAGE);
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
                 help();
                 return EXIT_SUCCESS;
             case 'p':
-                if (!cli_utils::parse_port(optarg, &host, &sockNum)) {
+                if (!cli_utils::parse_port(optarg, &host, &port)) {
                     cout << _("Invalid port definition.") << endl;
                     return 1;
                 }
@@ -411,7 +411,7 @@ int main(int argc, char **argv) {
 
 
     Enum<ConnectionError> error;
-    auto rfsv = std::unique_ptr<RFSV>(RFSV::connect(host, sockNum, &error));
+    auto rfsv = std::unique_ptr<RFSV>(RFSV::connect(host, port, &error));
     if (!rfsv) {
         cerr << "plpbackup: " << error << endl;
         return EXIT_FAILURE;
