@@ -30,6 +30,7 @@ libplp_la_LIBADD = $(INTLLIBS) $(LIBPMULTITHREAD) $(LIBTHREAD) $(NANOSLEEP_LIB) 
 libplp_la_SOURCES = \
 	bufferarray.cc \
 	bufferstore.cc \
+	connectionerror.cc \
 	channel.cc \
 	cli_utils.cc \
 	datalink.cc \
@@ -77,6 +78,7 @@ libplp_la_SOURCES = \
 noinst_HEADERS = \
 	bufferarray.h \
 	bufferstore.h \
+	connectionerror.h \
 	channel.h \
 	cli_utils.h \
 	datalink.h \
