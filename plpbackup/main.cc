@@ -37,6 +37,7 @@
 #include <sys/dirent.h>
 #include <sys/stat.h>
 #include <tcpsocket.h>
+#include <uuid.h>
 
 #include <dirent.h>
 #include <iomanip>
@@ -161,7 +162,9 @@ void log_progress(const std::string &path, float_t completedSize, float_t totalS
 //     return date::format("%FT%TZ", date::floor<chrono::seconds>(now));
 // }
 
-int backup(RFSV *rfsv, std::string backupPath) {
+int backup(RFSV *rfsv, const std::string &parentPath) {
+
+    std::string backupPath = pathutils::appending_components(parentPath, {uuid::uuid4()}, pathutils::PathFormat::kHost);
 
     std::string manifestPath = pathutils::appending_components(backupPath, {"manifest.json"}, pathutils::PathFormat::kHost);
     cout << manifestPath << endl;
