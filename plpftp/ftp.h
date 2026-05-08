@@ -37,7 +37,7 @@ class FTP {
 public:
     FTP();
     ~FTP();
-    int session(RFSV &rfsv, RPCS &rpcs, rclip &clipboard, std::vector<char *> argv);
+    int session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &clipboard, std::vector<char *> argv);
 
 private:
     std::vector<char *> getCommand();

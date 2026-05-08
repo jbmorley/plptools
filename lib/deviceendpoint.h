@@ -24,6 +24,7 @@
 
 #include "connectionerror.h"
 #include "Enum.h"
+#include "device.h"
 
 class rclip;
 class RFSV;
@@ -35,13 +36,21 @@ public:
     static std::unique_ptr<DeviceEndpoint> connect(const std::string host, int port, Enum<ConnectionError> *error);
 
     DeviceEndpoint(const std::string &id,
+                   bool persistentId,
                    std::unique_ptr<RFSV> rfsv,
                    std::unique_ptr<RPCS> rpcs,
                    std::unique_ptr<rclip> clip);
 
-    const std::string id_;
+    std::string id();
+
+    Enum<RFSV::errs> getName(std::string &name);
+    Enum<RFSV::errs> setName(const std::string &name);
+
     const std::unique_ptr<RFSV> rfsv_;
     const std::unique_ptr<RPCS> rpcs_;
     const std::unique_ptr<rclip> clip_;
 
+private:
+    const std::string id_;
+    bool hasPersisentId_;
 };
