@@ -108,6 +108,7 @@ noinst_HEADERS = \
 	psiprocess.h \
 	psitime.h \
 	rclip.h \
+	result.h \
 	rfsv.h \
 	rfsv16.h \
 	rfsv32.h \

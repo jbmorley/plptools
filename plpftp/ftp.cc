@@ -823,9 +823,9 @@ int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &
                 psionDir = xasprintf("%s%s", defDrive, DBASEDIR);
             } else {
                 char *newDir = epoc_dir_from(argv[1]);
-                uint32_t tmp;
-                if ((res = rfsv.dircount(newDir, tmp)) != RFSV::E_PSI_GEN_NONE) {
-                    cerr << _("Error: ") << res << endl;
+                auto directoryCount = deviceEndpoint.directoryCount(newDir);
+                if (!directoryCount) {
+                    cerr << _("Error: ") << directoryCount.error() << endl;
                     cerr << _("Keeping original directory \"") << psionDir << "\"" << endl;
                     free(newDir);
                 } else {
