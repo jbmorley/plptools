@@ -128,5 +128,5 @@ int main(int argc, char **argv) {
     }
     vector<char *> args(argv + optind, argv + argc);
     auto endpoint = deviceEndpoint.takeValue();
-    return ftp.session(*endpoint, *endpoint->rfsv_, *endpoint->rpcs_, *endpoint->clip_, args);
+    return ftp.session(*endpoint, args);
 }

@@ -543,12 +543,16 @@ static char *epoc_dir_from(const char *path) {
     return f1;
 }
 
-int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &clipboard, vector<char *> argv) {
+int FTP::session(DeviceEndpoint &deviceEndpoint, vector<char *> argv) {
     Enum<RFSV::errs> res;
     bool prompt = true;
     bool hash = false;
     cpCallback_t cab = checkAbortNoHash;
     bool once = false;
+
+    RFSV &rfsv = *deviceEndpoint.rfsv_;
+    RPCS &rpcs = *deviceEndpoint.rpcs_;
+    rclip &clipboard = *deviceEndpoint.clip_;
 
     unsigned argc = argv.size();
     if (argc > 0) {
