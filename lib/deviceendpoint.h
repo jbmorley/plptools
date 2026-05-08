@@ -35,15 +35,35 @@ public:
 
     static std::unique_ptr<DeviceEndpoint> connect(const std::string host, int port, Enum<ConnectionError> *error);
 
-    DeviceEndpoint(const std::string &id,
-                   bool persistentId,
-                   std::unique_ptr<RFSV> rfsv,
-                   std::unique_ptr<RPCS> rpcs,
-                   std::unique_ptr<rclip> clip);
+    /**
+    * Device identifier.
+    *
+    * The device identifier is guaranteed to be session-stable but isn't guaranteed to be persisted to disk. Use
+    * @ref hasPersistentId to check if the identifier is persistent. The identifier can be persisted by setting the
+    * device name using @ref setName.
+    *
+    * @return String containing the device identifier.
+    */
+    std::string id() const;
 
-    std::string id();
+    bool hasPersistentId() const;
 
-    Enum<RFSV::errs> getName(std::string &name);
+    /**
+    * Get the device name.
+    *
+    * @param name Out-param for the device name.
+    *
+    * @result @ref RFSV::E_PSI_GEN_NONE on success; error otherwise.
+    */
+    Enum<RFSV::errs> getName(std::string &name) const;
+
+    /**
+    * Set the device name.
+    *
+    * @param name New device name.
+    *
+    * @result @ref RFSV::E_PSI_GEN_NONE on success; error otherwise.
+    */
     Enum<RFSV::errs> setName(const std::string &name);
 
     const std::unique_ptr<RFSV> rfsv_;
@@ -51,6 +71,13 @@ public:
     const std::unique_ptr<rclip> clip_;
 
 private:
+
+    DeviceEndpoint(const std::string &id,
+                   bool persistentId,
+                   std::unique_ptr<RFSV> rfsv,
+                   std::unique_ptr<RPCS> rpcs,
+                   std::unique_ptr<rclip> clip);
+
     const std::string id_;
-    bool hasPersisentId_;
+    bool hasPersistentId_;
 };

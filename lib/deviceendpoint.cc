@@ -66,7 +66,8 @@ std::unique_ptr<DeviceEndpoint> DeviceEndpoint::connect(const std::string host,
         return nullptr;
     }
 
-    return std::make_unique<DeviceEndpoint>(id, persistentId, std::move(rfsv), std::move(rpcs), std::move(clip));
+    return std::unique_ptr<DeviceEndpoint>(
+        new DeviceEndpoint(id, persistentId, std::move(rfsv), std::move(rpcs), std::move(clip)));
 }
 
 DeviceEndpoint::DeviceEndpoint(const std::string &id,
@@ -78,13 +79,17 @@ DeviceEndpoint::DeviceEndpoint(const std::string &id,
 , rpcs_(std::move(rpcs))
 , clip_(std::move(clip))
 , id_(id)
-, hasPersisentId_(persistentId) {}
+, hasPersistentId_(persistentId) {}
 
-std::string DeviceEndpoint::id() {
+std::string DeviceEndpoint::id() const {
     return id_;
 }
 
-Enum<RFSV::errs> DeviceEndpoint::getName(std::string &name) {
+bool DeviceEndpoint::hasPersistentId() const {
+    return hasPersistentId_;
+}
+
+Enum<RFSV::errs> DeviceEndpoint::getName(std::string &name) const {
     Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
     auto deviceConfiguration = device::read_configuration(*rfsv_, error);
     if (error != RFSV::E_PSI_GEN_NONE) {
@@ -98,7 +103,7 @@ Enum<RFSV::errs> DeviceEndpoint::setName(const std::string &name) {
     auto deviceConfiguration = std::make_unique<DeviceConfiguration>(id_, name);
     auto result = device::write_configuration(*rfsv_, *deviceConfiguration);
     if (result == RFSV::E_PSI_GEN_NONE) {
-        hasPersisentId_ = true;
+        hasPersistentId_ = true;
     }
     return result;
 }
