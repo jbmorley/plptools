@@ -19,18 +19,21 @@
  */
 #include "config.h"
 
-#include <memory>
-#include <string>
-#include <system_error>
-
 #include "deviceendpoint.h"
 
+#include <memory>
+#include <string>
+
+#include "connectionerror.h"
 #include "device.h"
 #include "deviceconfiguration.h"
+#include "drive.h"
+#include "plpdirent.h"
 #include "rclip.h"
 #include "rfsv.h"
 #include "rpcs.h"
 #include "uuid.h"
+#include "bufferarray.h"
 
 std::unique_ptr<DeviceEndpoint> DeviceEndpoint::connect(const std::string host,
                                                         int port,
@@ -70,6 +73,15 @@ std::unique_ptr<DeviceEndpoint> DeviceEndpoint::connect(const std::string host,
         new DeviceEndpoint(id, persistentId, std::move(rfsv), std::move(rpcs), std::move(clip)));
 }
 
+Result<DeviceEndpoint, Enum<ConnectionError>> DeviceEndpoint::connect(const std::string host, int port) {
+    Enum<ConnectionError> error;
+    auto deviceEndpoint = DeviceEndpoint::connect(host, port, &error);
+    if (!deviceEndpoint) {
+        return Result<DeviceEndpoint, Enum<ConnectionError>>::failure(error);
+    }
+    return Result<DeviceEndpoint, Enum<ConnectionError>>::success(std::move(deviceEndpoint));
+}
+
 DeviceEndpoint::DeviceEndpoint(const std::string &id,
                                bool persistentId,
                                std::unique_ptr<RFSV> rfsv,
@@ -99,6 +111,15 @@ Enum<RFSV::errs> DeviceEndpoint::getName(std::string &name) const {
     return RFSV::E_PSI_GEN_NONE;
 }
 
+Result<std::string, Enum<RFSV::errs>> DeviceEndpoint::getName() const {
+    Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
+    auto deviceConfiguration = device::read_configuration(*rfsv_, error);
+    if (error != RFSV::E_PSI_GEN_NONE) {
+        return Result<std::string, Enum<RFSV::errs>>::failure(error);
+    }
+    return Result<std::string, Enum<RFSV::errs>>::success(deviceConfiguration->name());
+}
+
 Enum<RFSV::errs> DeviceEndpoint::setName(const std::string &name) {
     auto deviceConfiguration = std::make_unique<DeviceConfiguration>(id_, name);
     auto result = device::write_configuration(*rfsv_, *deviceConfiguration);
@@ -106,4 +127,39 @@ Enum<RFSV::errs> DeviceEndpoint::setName(const std::string &name) {
         hasPersistentId_ = true;
     }
     return result;
+}
+
+Result<uint32_t, Enum<RFSV::errs>> DeviceEndpoint::directoryCount(const std::string &path) {
+    return Result<uint32_t, Enum<RFSV::errs>>::check(RFSV::E_PSI_GEN_NONE, [&](uint32_t &count) {
+        return rfsv_->dircount(path.c_str(), count);
+    });
+}
+
+Result<std::vector<Drive>, Enum<RFSV::errs>> DeviceEndpoint::drives() {
+    return Result<std::vector<Drive>, Enum<RFSV::errs>>::check(RFSV::E_PSI_GEN_NONE, [&](std::vector<Drive> &drives) {
+        return rfsv_->drives(drives);
+    });
+}
+
+Result<std::vector<PlpDirent>, Enum<RFSV::errs>> DeviceEndpoint::dir(const std::string &path) {
+    PlpDir dirent;
+    auto error = rfsv_->dir(path.c_str(), dirent);
+    if (error != RFSV::E_PSI_GEN_NONE) {
+        return Result<std::vector<PlpDirent>, Enum<RFSV::errs>>::failure(error);
+    }
+    std::vector<PlpDirent> result(dirent.begin(), dirent.end());
+    return Result<std::vector<PlpDirent>, Enum<RFSV::errs>>::success(result);
+}
+
+Result<std::vector<std::string>, Enum<RFSV::errs>> DeviceEndpoint::ownerInfo() {
+    BufferArray buffer;
+    auto error = rpcs_->getOwnerInfo(buffer);
+    if (error != RFSV::E_PSI_GEN_NONE) {
+        return Result<std::vector<std::string>, Enum<RFSV::errs>>::failure(error);
+    }
+    std::vector<std::string> result;
+    while (!buffer.empty()) {
+        result.push_back(buffer.pop().getString());
+    }
+    return Result<std::vector<std::string>, Enum<RFSV::errs>>::success(result);
 }

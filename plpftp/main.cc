@@ -121,12 +121,12 @@ int main(int argc, char **argv) {
         ftpHeader();
     }
 
-    Enum<ConnectionError> error;
-    auto deviceEndpoint = DeviceEndpoint::connect(host, port, &error);
+    auto deviceEndpoint = DeviceEndpoint::connect(host, port);
     if (!deviceEndpoint) {
-        std::cerr << "plpftp: " << error << std::endl;
+        std::cerr << "plpftp: " << deviceEndpoint.error() << std::endl;
         return EXIT_FAILURE;
     }
     vector<char *> args(argv + optind, argv + argc);
-    return ftp.session(*deviceEndpoint, *deviceEndpoint->rfsv_, *deviceEndpoint->rpcs_, *deviceEndpoint->clip_, args);
+    auto endpoint = deviceEndpoint.takeValue();
+    return ftp.session(*endpoint, *endpoint->rfsv_, *endpoint->rpcs_, *endpoint->clip_, args);
 }

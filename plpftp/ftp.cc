@@ -556,17 +556,16 @@ int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &
     }
 
     {
-        std::string name;
-        auto nameError = deviceEndpoint.getName(name);
+        auto name = deviceEndpoint.getName();
 
         Enum<RPCS::machs> machType;
         rpcs.getMachineType(machType);
         if (!once) {
             int speed = rfsv.getSpeed();
-            if (nameError != RFSV::E_PSI_GEN_NONE) {
+            if (!name) {
                 cout << _("Connected to a ") << machType << _(", at ") << speed << _(" baud.") << endl;
             } else {
-                cout << _("Connected to '") << name << _("', a ") << machType << _(", at ")
+                cout << _("Connected to '") << name.value() << _("', a ") << machType << _(", at ")
                      << speed << _(" baud.") << endl;
             }
             cout << endl;
@@ -735,80 +734,76 @@ int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &
             free(f1);
             continue;
         }
+
         if (!strcmp(argv[0], "deviceid") && (argc == 1)) {
             cout << deviceEndpoint.id() << endl;
             continue;
         }
-        if (!strcmp(argv[0], "devicename") && (argc == 1)) {
-            std::string name;
-            auto error = deviceEndpoint.getName(name);
-            if (error != RFSV::E_PSI_GEN_NONE) {
-                cerr << _("Error: ") << error << endl;
-                continue;
-            }
-            cout << name << endl;
-            continue;
-        }
-        if (!strcmp(argv[0], "setdevicename") && (argc == 2)) {
-            std::string name = argv[1];
-            auto error = deviceEndpoint.setName(name);
-            if (error != RFSV::E_PSI_GEN_NONE) {
-                cerr << _("Error: ") << error << endl;
-                continue;
-            }
-            continue;
-        }
-        if (!strcmp(argv[0], "dircnt")) {
-            uint32_t cnt;
-            if ((res = rfsv.dircount(psionDir, cnt)) != RFSV::E_PSI_GEN_NONE) {
-                cerr << _("Error: ") << res << endl;
-            } else {
-                cout << cnt << _(" Entries") << endl;
-            }
-            continue;
-        }
-        if (!strcmp(argv[0], "devs")) {
-            uint32_t devbits;
-            if ((res = rfsv.devlist(devbits)) == RFSV::E_PSI_GEN_NONE) {
-                cout << _("Drive Type Volname     Total     Free      UniqueID") << endl;
-                for (int i = 0; i < 26; i++) {
-                    Drive drive;
 
-                    if ((devbits & 1) != 0) {
-                        if (rfsv.devinfo(i + 'A', drive) == RFSV::E_PSI_GEN_NONE) {
-                            cout << (char) ('A' + i) << "     " << hex
-                                 << setw(4) << setfill('0')
-                                 << static_cast<uint32_t>(drive.getMediaType()) << " " << setw(12)
-                                 << setfill(' ') << setiosflags(ios::left)
-                                 << drive.getName().c_str()
-                                 << resetiosflags(ios::left) << dec << setw(9)
-                                 << drive.getSize() << setw(9)
-                                 << drive.getSpace() << "  " << setw(8)
-                                 << setfill('0') << hex << drive.getUID()
-                                 << dec << endl;
-                        }
-                    }
-                    devbits >>= 1;
-                }
+        if (!strcmp(argv[0], "devicename") && (argc == 1)) {
+            auto name = deviceEndpoint.getName();
+            if (!name) {
+                cerr << _("Error: ") << name.error() << endl;
             } else {
-                cerr << _("Error: ") << res << endl;
+                cout << name.value() << endl;
             }
             continue;
         }
+
+        if (!strcmp(argv[0], "setdevicename") && (argc == 2)) {
+            auto error = deviceEndpoint.setName(argv[1]);
+            if (error != RFSV::E_PSI_GEN_NONE) {
+                cerr << _("Error: ") << error << endl;
+                continue;
+            }
+            continue;
+        }
+
+        if (!strcmp(argv[0], "dircnt")) {
+            auto count = deviceEndpoint.directoryCount(psionDir);
+            if (!count) {
+                cerr << _("Error: ") << count.error() << endl;
+            } else {
+                cout << count.value() << _(" Entries") << endl;
+            }
+            continue;
+        }
+
+        if (!strcmp(argv[0], "devs")) {
+            auto drives = deviceEndpoint.drives();
+            if (!drives) {
+                cerr << _("Error: ") << drives.error() << endl;
+            } else {
+                cout << _("Drive Type Volname     Total     Free      UniqueID") << endl;
+                for (const auto &drive : drives.value()) {
+                    cout << drive.getDriveLetter() << "     " << hex
+                     << setw(4) << setfill('0')
+                     << static_cast<uint32_t>(drive.getMediaType()) << " " << setw(12)
+                     << setfill(' ') << setiosflags(ios::left)
+                     << drive.getName().c_str()
+                     << resetiosflags(ios::left) << dec << setw(9)
+                     << drive.getSize() << setw(9)
+                     << drive.getSpace() << "  " << setw(8)
+                     << setfill('0') << hex << drive.getUID()
+                     << dec << endl;
+                }
+            }
+            continue;
+        }
+
         if (!strcmp(argv[0], "ls") || !strcmp(argv[0], "dir")) {
-            PlpDir files;
-            char *dname = argc > 1 ? epoc_dir_from(argv[1]) : xstrdup(psionDir);
-            if ((res = rfsv.dir(dname, files)) != RFSV::E_PSI_GEN_NONE) {
-                cerr << _("Error: ") << res << endl;
+            std::string dname = argc > 1 ? epoc_dir_from(argv[1]) : psionDir;
+            auto files = deviceEndpoint.dir(dname);
+            if (!files) {
+                cerr << _("Error: ") << files.error() << endl;
             } else {
-                while (!files.empty()) {
-                    cout << files[0] << endl;
-                    files.pop_front();
+                for (const auto &file : files.value()) {
+                    cout << file << endl;
                 }
             }
-            free(dname);
             continue;
         }
+
         if (!strcmp(argv[0], "lcd")) {
             if (argc == 1) {
                 resetUnixWd();
@@ -1146,17 +1141,19 @@ int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &
             free(cmd);
             continue;
         }
+
         if (!strcmp(argv[0], "ownerinfo")) {
-            BufferArray b;
-            if ((res = rpcs.getOwnerInfo(b)) != RFSV::E_PSI_GEN_NONE) {
-                cerr << _("Error: ") << res << endl;
-                continue;
-            }
-            while (!b.empty()) {
-                cout << "  " << b.pop().getString() << endl;
+            auto ownerInfo = deviceEndpoint.ownerInfo();
+            if (!ownerInfo) {
+                cerr << _("Error: ") << ownerInfo.error() << endl;
+            } else {
+                for (const auto &line : ownerInfo.value()) {
+                    cout << line << endl;
+                }
             }
             continue;
         }
+
         if (!strcmp(argv[0], "machinfo")) {
             RPCS::machineInfo mi;
             if ((res = rpcs.getMachineInfo(mi)) != RFSV::E_PSI_GEN_NONE) {

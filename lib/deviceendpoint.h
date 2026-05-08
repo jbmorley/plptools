@@ -30,10 +30,77 @@ class rclip;
 class RFSV;
 class RPCS;
 
+template<typename T, typename E>
+class Result {
+public:
+
+    template<typename F>
+    static Result check(E success, F&& f) {
+        T out{};
+        E error = f( out);
+        if (error != success) {
+            return Result<T, E>::failure(error);
+        }
+        return Result<T, E>::success(std::move(out));
+    }
+
+    static Result success(std::unique_ptr<T> value) {
+        return Result(std::move(value), nullptr);
+    }
+
+    static Result success(T value) {
+        return Result(std::make_unique<T>(std::move(value)), nullptr);
+    }
+
+    static Result failure(E error) {
+        return Result(nullptr, std::make_unique<E>(std::move(error)));
+    }
+
+    explicit operator bool() const {
+        return static_cast<bool>(value_);
+    }
+
+    T& value() {
+        assert(value_);
+        return *value_;
+    }
+
+    const T& value() const {
+        assert(value_);
+        return *value_;
+    }
+
+    std::unique_ptr<T> takeValue() {
+        assert(value_);
+        return std::move(value_);
+    }
+
+    const E& error() const {
+        assert(error_);
+        return *error_;
+    }
+
+private:
+
+    Result(std::unique_ptr<T> value, std::unique_ptr<E> error)
+    : value_(std::move(value))
+    , error_(std::move(error)) {}
+
+    std::unique_ptr<T> value_;
+    std::unique_ptr<E> error_;
+};
+
+template<typename T>
+bool operator!=(const Enum<T>& a, const Enum<T>& b) {
+    return a.value != b.value;
+}
+
 class DeviceEndpoint {
 public:
 
     static std::unique_ptr<DeviceEndpoint> connect(const std::string host, int port, Enum<ConnectionError> *error);
+
+    static Result<DeviceEndpoint, Enum<ConnectionError>> connect(const std::string host, int port);
 
     /**
     * Device identifier.
@@ -57,6 +124,8 @@ public:
     */
     Enum<RFSV::errs> getName(std::string &name) const;
 
+    Result<std::string, Enum<RFSV::errs>> getName() const;
+
     /**
     * Set the device name.
     *
@@ -66,9 +135,21 @@ public:
     */
     Enum<RFSV::errs> setName(const std::string &name);
 
-    const std::unique_ptr<RFSV> rfsv_;
-    const std::unique_ptr<RPCS> rpcs_;
-    const std::unique_ptr<rclip> clip_;
+
+    /* RFSV */
+
+    Result<uint32_t, Enum<RFSV::errs>> directoryCount(const std::string &path);
+
+    Result<std::vector<Drive>, Enum<RFSV::errs>> drives();
+    Result<std::vector<PlpDirent>, Enum<RFSV::errs>> dir(const std::string &path);
+
+    /* RPCS */
+
+    Result<std::vector<std::string>, Enum<RFSV::errs>> ownerInfo();
+
+    std::unique_ptr<RFSV> rfsv_;
+    std::unique_ptr<RPCS> rpcs_;
+    std::unique_ptr<rclip> clip_;
 
 private:
 
