@@ -23,21 +23,21 @@
 
 #include "config.h"
 
-#include <memory>
 #include <vector>
 
 #include "rfsv.h"
-#include "Enum.h"
 
-class RPCS;
-class BufferStore;
 class BufferArray;
+class BufferStore;
+class DeviceEndpoint;
+class RPCS;
+class rclip;
 
 class FTP {
 public:
     FTP();
     ~FTP();
-    int session(RFSV &rfsv, RPCS &rpcs, rclip &clipboard, std::vector<char *> argv);
+    int session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &clipboard, std::vector<char *> argv);
 
 private:
     std::vector<char *> getCommand();

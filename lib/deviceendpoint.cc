@@ -46,13 +46,8 @@ std::unique_ptr<DeviceEndpoint> DeviceEndpoint::connect(const std::string host,
     // Get the device configuration.
     Enum<RFSV::errs> result;
     auto deviceConfiguration = device::read_configuration(*rfsv, result);
-    if (!deviceConfiguration) {
-        // Create and write a new device configuration if it doesn't exist.
-        // We ignore errors here as we want failures to write the device configuration to be non-fatal. For example., if
-        // the device is out of memory, it's acceptable for it to appear as a new device on each connection.
-        deviceConfiguration = std::make_unique<DeviceConfiguration>(uuid::uuid4(), _("My Psion"));
-        device::write_configuration(*rfsv, *deviceConfiguration);
-    }
+    std::string id = deviceConfiguration ? deviceConfiguration->id() : uuid::uuid4();
+    bool hasPersistentConfiguration = static_cast<bool>(deviceConfiguration);
 
     auto rpcs = std::unique_ptr<RPCS>(RPCS::connect(host, port, &internalError));
     if (!rpcs) {
@@ -70,14 +65,60 @@ std::unique_ptr<DeviceEndpoint> DeviceEndpoint::connect(const std::string host,
         return nullptr;
     }
 
-    return std::make_unique<DeviceEndpoint>(deviceConfiguration->id(), std::move(rfsv), std::move(rpcs), std::move(clip));
+    return std::unique_ptr<DeviceEndpoint>(
+        new DeviceEndpoint(id, hasPersistentConfiguration, std::move(rfsv), std::move(rpcs), std::move(clip)));
 }
 
 DeviceEndpoint::DeviceEndpoint(const std::string &id,
+                               bool hasPersistentConfiguration,
                                std::unique_ptr<RFSV> rfsv,
                                std::unique_ptr<RPCS> rpcs,
                                std::unique_ptr<rclip> clip)
-: id_(id)
-, rfsv_(std::move(rfsv))
+: rfsv_(std::move(rfsv))
 , rpcs_(std::move(rpcs))
-, clip_(std::move(clip)) {}
+, clip_(std::move(clip))
+, id_(id)
+, hasPersistentConfiguration_(hasPersistentConfiguration) {}
+
+std::string DeviceEndpoint::id() const {
+    return id_;
+}
+
+bool DeviceEndpoint::hasPersistentId() const {
+    return hasPersistentConfiguration_;
+}
+
+Enum<RFSV::errs> DeviceEndpoint::getName(std::string &name) const {
+
+    // Don't bother to fetch the configuration if we know it does't exist.
+    if (!hasPersistentConfiguration_) {
+        return RFSV::E_PSI_FILE_RECORD;
+    }
+
+    // Read the configuration.
+    Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
+    auto deviceConfiguration = device::read_configuration(*rfsv_, error);
+
+    // Check for E_PSI_FILE_NXIST and return it as E_PSI_FILE_RECORD which seems more logical.
+    if (error == RFSV::E_PSI_FILE_NXIST) {
+        return RFSV::E_PSI_FILE_RECORD;
+    }
+
+    // Return any errors.
+    if (error != RFSV::E_PSI_GEN_NONE) {
+        return error;
+    }
+
+    // Update the name and indicate success.
+    name = deviceConfiguration->name();
+    return RFSV::E_PSI_GEN_NONE;
+}
+
+Enum<RFSV::errs> DeviceEndpoint::setName(const std::string &name) {
+    auto deviceConfiguration = std::make_unique<DeviceConfiguration>(id_, name);
+    auto result = device::write_configuration(*rfsv_, *deviceConfiguration);
+    if (result == RFSV::E_PSI_GEN_NONE) {
+        hasPersistentConfiguration_ = true;
+    }
+    return result;
+}
