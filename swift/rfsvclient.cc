@@ -94,6 +94,11 @@ RFSV::errs RFSVClient::fgetattr(const char * const name, uint32_t &attr) {
     return _rfsv->fgetattr(name, attr);
 }
 
+RFSV::errs RFSVClient::fsetattr(const char * const name, const uint32_t seta, const uint32_t unseta) {
+    assert(_rfsv);
+    return _rfsv->fsetattr(name, seta, unseta);
+}
+
 const char *plpdirent_get_name(PlpDirent *dirent) {
     return dirent->getName();
 }
