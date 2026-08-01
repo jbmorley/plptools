@@ -26,6 +26,9 @@ public:
     RFSV::errs fgeteattr(const char * const name, PlpDirent &e);
     RFSV::errs fgetattr(const char * const name, uint32_t &attr);
     RFSV::errs fsetattr(const char * const name, const uint32_t seta, const uint32_t unseta);
+
+    int getProtocolVersion();
+
 private:
     TCPSocket *_socket;
     RFSVFactory *_rfsvfactory;

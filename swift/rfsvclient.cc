@@ -99,6 +99,11 @@ RFSV::errs RFSVClient::fsetattr(const char * const name, const uint32_t seta, co
     return _rfsv->fsetattr(name, seta, unseta);
 }
 
+int RFSVClient::getProtocolVersion() {
+    assert(_rfsv);
+    return _rfsv->getProtocolVersion();
+}
+
 const char *plpdirent_get_name(PlpDirent *dirent) {
     return dirent->getName();
 }
