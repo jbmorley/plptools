@@ -18,13 +18,18 @@
 #
 
 # This file allows us to add out of band annotations of the auto-generated plptools Swift APIs. Right now, it exists
-# solely to ensure the RFSV class remains available to the Swift API even though it is not copyable or movable. We
-# achieve this by the dangerous act of making it an immortal reference. This means it should _never_ be used directly as
-# references are guaranteed to leak. Fortunately Reconnect only uses `RFSVClient` which manages `RFSV` internally.
+# solely to ensure the RFSV and RPCS classes remain available to the Swift API even though they are not copyable or
+# movable. We achieve this by the dangerous act of making them immortal references. This means they should _never_ be
+# used directly as references are guaranteed to leak. Fortunately Reconnect only uses `RFSVClient` and `RPCSClient`
+# which manage instances internally.
 ---
 Name: core
 Tags:
 - Name: RFSV
+  SwiftImportAs: reference
+  SwiftRetainOp: immortal
+  SwiftReleaseOp: immortal
+- Name: RPCS
   SwiftImportAs: reference
   SwiftRetainOp: immortal
   SwiftReleaseOp: immortal

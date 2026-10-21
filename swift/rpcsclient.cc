@@ -5,8 +5,7 @@
 #include <malloc/_malloc.h>
 #include <iostream>
 
-RPCSClient::RPCSClient() : _socket(0), _rpcsfactory(0), _rpcs(0) {
-    _socket = new TCPSocket();
+RPCSClient::RPCSClient() : _rpcsfactory(0), _rpcs(0) {
 }
 
 RPCSClient::~RPCSClient() {
@@ -16,17 +15,13 @@ RPCSClient::~RPCSClient() {
     if (_rpcsfactory) {
         delete _rpcsfactory;
     }
-    delete _socket;
 }
 
 bool RPCSClient::connect(const char * const Peer, int PeerPort) {
     if (_rpcs) {
         return true;
     }
-    if (!_socket->connect(Peer, PeerPort)) {
-        return false;
-    }
-    _rpcsfactory = new RPCSFactory(_socket);
+    _rpcsfactory = new RPCSFactory(Peer, PeerPort);
     _rpcs = _rpcsfactory->create(true);
     if (!_rpcs) {
         return false;

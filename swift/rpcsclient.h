@@ -17,7 +17,6 @@ public:
     RFSV::errs execProgram(const char *program, const char *args);
     RFSV::errs stopPrograms();
 private:
-    TCPSocket *_socket;
     RPCSFactory *_rpcsfactory;
     RPCS *_rpcs;
 };

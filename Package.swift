@@ -39,6 +39,7 @@ let package = Package(
             sources: [
                 "lib/bufferarray.cc",
                 "lib/bufferstore.cc",
+                "lib/connectionerror.cc",
                 "lib/drive.cc",
                 "lib/Enum.cc",
                 "lib/iowatch.cc",
