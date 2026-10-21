@@ -128,5 +128,5 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
     vector<char *> args(argv + optind, argv + argc);
-    return ftp.session(*deviceEndpoint->rfsv_, *deviceEndpoint->rpcs_, *deviceEndpoint->clip_, args);
+    return ftp.session(*deviceEndpoint, *deviceEndpoint->rfsv_, *deviceEndpoint->rpcs_, *deviceEndpoint->clip_, args);
 }

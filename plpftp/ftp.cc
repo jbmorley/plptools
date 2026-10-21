@@ -29,7 +29,6 @@
 #include <cstdlib>
 #include <drive.h>
 #include <Enum.h>
-#include <memory>
 #include <pathutils.h>
 #include <plpintl.h>
 #include <rclip.h>
@@ -53,8 +52,8 @@
 #include <signal.h>
 #include <netdb.h>
 #include <fnmatch.h>
-#include <device.h>
 #include <deviceconfiguration.h>
+#include <deviceendpoint.h>
 
 #include "ignore-value.h"
 #include "string-buffer.h"
@@ -146,7 +145,7 @@ void FTP::usage() {
     cout << endl << _("Device commands:") << endl << endl;
     cout << "  deviceid - get the device id used for backup and sync" << endl;
     cout << "  devicename - get the device name used for backup and sync" << endl;
-    cout << "  setdevicename <name> - set the device name used for backup and sync" << endl;
+    cout << "  setdevicename <name> - set the device name and persist the id used for backup and sync" << endl;
     cout << endl;
 }
 
@@ -543,7 +542,7 @@ static char *epoc_dir_from(const char *path) {
     return f1;
 }
 
-int FTP::session(RFSV &rfsv, RPCS &rpcs, rclip &clipboard, vector<char *> argv) {
+int FTP::session(DeviceEndpoint &deviceEndpoint, RFSV &rfsv, RPCS &rpcs, rclip &clipboard, vector<char *> argv) {
     Enum<RFSV::errs> res;
     bool prompt = true;
     bool hash = false;
@@ -556,21 +555,18 @@ int FTP::session(RFSV &rfsv, RPCS &rpcs, rclip &clipboard, vector<char *> argv) 
     }
 
     {
-        Enum<RFSV::errs> error;
-        auto deviceConfiguration = device::read_configuration(rfsv, error);
-        if (!deviceConfiguration) {
-            cerr << _("Error: ") << error << endl;
-        }
+        std::string name;
+        auto nameError = deviceEndpoint.getName(name);
 
         Enum<RPCS::machs> machType;
         rpcs.getMachineType(machType);
         if (!once) {
             int speed = rfsv.getSpeed();
-            if (deviceConfiguration) {
-                cout << _("Connected to '") << deviceConfiguration->name() << _("', a ") << machType << _(", at ")
-                     << speed << _(" baud.") << endl;
-            } else {
+            if (nameError != RFSV::E_PSI_GEN_NONE) {
                 cout << _("Connected to a ") << machType << _(", at ") << speed << _(" baud.") << endl;
+            } else {
+                cout << _("Connected to '") << name << _("', a ") << machType << _(", at ")
+                     << speed << _(" baud.") << endl;
             }
             cout << endl;
         }
@@ -739,35 +735,27 @@ int FTP::session(RFSV &rfsv, RPCS &rpcs, rclip &clipboard, vector<char *> argv) 
             continue;
         }
         if (!strcmp(argv[0], "deviceid") && (argc == 1)) {
-            Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
-            auto deviceConfiguration = device::read_configuration(rfsv, error);
-            if (!deviceConfiguration) {
-                cerr << _("Error: ") << error << endl;
-                continue;
+            cout << deviceEndpoint.id() << endl;
+            if (!deviceEndpoint.hasPersistentId()) {
+                cout << _("Warning: ") << _("not persistent; use setdevicename to set a name and persist the device id") << endl;
             }
-            cout << deviceConfiguration->id() << endl;
             continue;
         }
         if (!strcmp(argv[0], "devicename") && (argc == 1)) {
-            Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
-            auto deviceConfiguration = device::read_configuration(rfsv, error);
-            if (!deviceConfiguration) {
+            std::string name;
+            auto error = deviceEndpoint.getName(name);
+            if (error == RFSV::E_PSI_GEN_NONE) {
+                cout << name << endl;
+            } else if (error == RFSV::E_PSI_FILE_RECORD) {
+                cout << _("Error: ") << "not set; use setdevicename to set a name and persist the device id" << endl;
+            } else {
                 cerr << _("Error: ") << error << endl;
-                continue;
             }
-            cout << deviceConfiguration->name() << endl;
             continue;
         }
         if (!strcmp(argv[0], "setdevicename") && (argc == 2)) {
             std::string name = argv[1];
-            Enum<RFSV::errs> error = RFSV::E_PSI_GEN_NONE;
-            auto deviceConfiguration = device::read_configuration(rfsv, error);
-            if (!deviceConfiguration) {
-                cerr << _("Error: ") << error << endl;
-                continue;
-            }
-            deviceConfiguration->setName(argv[1]);
-            error = device::write_configuration(rfsv, *deviceConfiguration);
+            auto error = deviceEndpoint.setName(name);
             if (error != RFSV::E_PSI_GEN_NONE) {
                 cerr << _("Error: ") << error << endl;
                 continue;
