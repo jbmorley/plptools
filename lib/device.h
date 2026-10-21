@@ -29,26 +29,12 @@
 #include "rfsv.h"
 
 class DeviceConfiguration;
+class DeviceEndpoint;
 class rclip;
 class RFSV;
 class RPCS;
 
 namespace device {
-
-class DeviceEndpoint {
-public:
-    DeviceEndpoint(const std::string &id,
-                   std::unique_ptr<RFSV> rfsv,
-                   std::unique_ptr<RPCS> rpcs,
-                   std::unique_ptr<rclip> clip);
-
-    const std::string id_;
-    const std::unique_ptr<RFSV> rfsv_;
-    const std::unique_ptr<RPCS> rpcs_;
-    const std::unique_ptr<rclip> clip_;
-};
-
-extern std::unique_ptr<DeviceEndpoint> connect(const std::string host, int port, Enum<ConnectionError> *error);
 
 extern Enum<RFSV::errs> write_configuration(RFSV &rfsv, const DeviceConfiguration &deviceConfiguration);
 
