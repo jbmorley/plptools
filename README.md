@@ -159,15 +159,13 @@ This is a branch of plptools with custom modifications to make it possible to us
 First up, configure and build plptools to ensure we generate the required header files:
 
 ```shell
-PATH="$(brew --prefix coreutils)/libexec/gnubin:$(brew --prefix m4)/bin:$PATH" ./bootstrap --skip-po
-CPPFLAGS="-I$(brew --prefix gettext)/include -I$(brew --prefix readline)/include" LDFLAGS="-L$(brew --prefix gettext)/lib -L$(brew --prefix readline)/lib" ./configure
-make
+./build-aux/build.sh
 ```
 
 Next, make sure the config file is available to the different components:
 
 ```shell
-cp config.h include && cp config.h lib && cp config.h ncpd
+cp config.h lib
 ```
 
 Remove some directories that the Swift package manager unhelpfully detects:
