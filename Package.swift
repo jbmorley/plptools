@@ -24,7 +24,6 @@ let package = Package(
             dependencies: [],
             path: ".",
             sources: [
-                "gnulib/lib/yesno.c",
                 "gnulib/lib/string-buffer.c",
                 "lib/mp_serial.c",
             ],
