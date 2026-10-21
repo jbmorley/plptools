@@ -30,7 +30,6 @@ public:
     int getProtocolVersion();
 
 private:
-    TCPSocket *_socket;
     RFSVFactory *_rfsvfactory;
     RFSV *_rfsv;
 };

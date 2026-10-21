@@ -5,8 +5,7 @@
 
 using namespace std;
 
-RFSVClient::RFSVClient() : _socket(0), _rfsvfactory(0), _rfsv(0) {
-    _socket = new TCPSocket();
+RFSVClient::RFSVClient() : _rfsvfactory(0), _rfsv(0) {
 }
 
 RFSVClient::~RFSVClient() {
@@ -16,17 +15,13 @@ RFSVClient::~RFSVClient() {
     if (_rfsvfactory) {
         delete _rfsvfactory;
     }
-    delete _socket;
 }
 
 bool RFSVClient::connect(const char * const Peer, int PeerPort) {
     if (_rfsv) {
         return true;
     }
-    if (!_socket->connect(Peer, PeerPort)) {
-        return false;
-    }
-    _rfsvfactory = new RFSVFactory(_socket);
+    _rfsvfactory = new RFSVFactory(Peer, PeerPort);
     _rfsv = _rfsvfactory->create(true);
     if (!_rfsv) {
         return false;
