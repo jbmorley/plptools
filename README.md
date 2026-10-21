@@ -90,11 +90,22 @@ The git repository can be cloned with:
 git clone https://github.com/plptools/plptools.git
 ```
 
+## Contributing
+
+We welcome and encourage contributions. We require that all code, pull requests, and issues are human-authored (not AI-generated) and that contributors have undertaken due diligence to ensure they are legally able to assert copyright and grant usage rights. Please endeavor to keep changes small and reviewable. We will close pull requests and issues that violate this policy. This is intended to ensure the quality, sustainability and on-going security and longevity of the plptools project.
+
+We have serious concerns about the copyright, societal, and environmental implications of LLMs and generative AI as implemented today. However, we recognize these tools can provide utility when applied to certain investigative and reverse engineering tasks. We do not wish to blindly reject learnings resulting from the use of these tools, but require disclosure of such usage and request careful consideration of the environmental impact.
+
+## Code of Conduct
+
+This is an inclusive project. We will not accept any form of racism, sexism, or any other discrimination in our community. Please acknowledge that plptools is developed and supported by volunteers and be respectful in all communication.
+
 ## Updating
 
 This is a branch of plptools with custom modifications to make it possible to use it with the Swift package manager. Catching up to upstream currently involves a few fiddly steps. Hopefully these can be reduced in the future as this is slowly unbranched.
 
 First up, configure and build plptools to ensure we generate the required header files:
+
 ```shell
 PATH="$(brew --prefix coreutils)/libexec/gnubin:$(brew --prefix m4)/bin:$PATH" ./bootstrap --skip-po
 CPPFLAGS="-I$(brew --prefix gettext)/include -I$(brew --prefix readline)/include" LDFLAGS="-L$(brew --prefix gettext)/lib -L$(brew --prefix readline)/lib" ./configure
