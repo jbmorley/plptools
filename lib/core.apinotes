@@ -25,11 +25,19 @@
 ---
 Name: core
 Tags:
+- Name: MediaType
+  EnumExtensibility: closed
 - Name: RFSV
   SwiftImportAs: reference
   SwiftRetainOp: immortal
   SwiftReleaseOp: immortal
+  Tags:
+  - Name: errs
+    EnumExtensibility: closed
 - Name: RPCS
   SwiftImportAs: reference
   SwiftRetainOp: immortal
   SwiftReleaseOp: immortal
+  Tags:
+  - Name: machs
+    EnumExtensibility: closed
