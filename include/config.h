@@ -568,14 +568,17 @@
 /* Define to 1 if you have the <crtdefs.h> header file. */
 /* #undef HAVE_CRTDEFS_H */
 
+/* define if the compiler supports basic C++17 syntax */
+#define HAVE_CXX17 1
+
 /* Define to 1 if the alignas and alignof keywords work. */
-/* #undef HAVE_C_ALIGNASOF */
+#define HAVE_C_ALIGNASOF 1
 
 /* Define to 1 if bool, true and false work as per C2023. */
-/* #undef HAVE_C_BOOL */
+#define HAVE_C_BOOL 1
 
 /* Define to 1 if the static_assert keyword works. */
-/* #undef HAVE_C_STATIC_ASSERT */
+#define HAVE_C_STATIC_ASSERT 1
 
 /* Define to 1 if C supports variable-length arrays. */
 #define HAVE_C_VARARRAYS 1
@@ -1381,7 +1384,7 @@
 
 /* Define to 1 if 'lstat' dereferences a symlink specified with a trailing
    slash. */
-/* #undef LSTAT_FOLLOWS_SLASHED_SYMLINK */
+#define LSTAT_FOLLOWS_SLASHED_SYMLINK 1
 
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #define LT_OBJDIR ".libs/"
@@ -1497,7 +1500,7 @@
 #define NL_LANGINFO_MTSAFE 1
 
 /* Define to 1 if open() fails to recognize a trailing slash. */
-#define OPEN_TRAILING_SLASH_BUG 1
+/* #undef OPEN_TRAILING_SLASH_BUG */
 
 /* Name of package */
 #define PACKAGE "plptools"
@@ -1509,7 +1512,7 @@
 #define PACKAGE_NAME "plptools"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "plptools 1.0.25"
+#define PACKAGE_STRING "plptools 1.0.26"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "plptools"
@@ -1518,7 +1521,7 @@
 #define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "1.0.25"
+#define PACKAGE_VERSION "1.0.26"
 
 /* Define to the type that is the result of default argument promotions of
    type mode_t. */
@@ -1559,7 +1562,7 @@
 
 /* Define to 1 if stat needs help when passed a file name with a trailing
    slash */
-#define REPLACE_FUNC_STAT_FILE 1
+/* #undef REPLACE_FUNC_STAT_FILE */
 
 /* Define if nl_langinfo exists but is overridden by gnulib. */
 #define REPLACE_NL_LANGINFO 1
@@ -1638,6 +1641,10 @@
 /* Enable extensions on AIX, Interix, z/OS.  */
 #ifndef _ALL_SOURCE
 # define _ALL_SOURCE 1
+#endif
+/* Enable extensions on Cosmopolitan Libc. */
+#ifndef _COSMO_SOURCE
+# define _COSMO_SOURCE 1
 #endif
 /* Enable general extensions on macOS.  */
 #ifndef _DARWIN_C_SOURCE
@@ -1731,7 +1738,7 @@
 /* #undef USE_WINDOWS_THREADS */
 
 /* Version number of package */
-#define VERSION "1.0.25"
+#define VERSION "1.0.26"
 
 /* Define to l, ll, u, ul, ull, etc., as suitable for constants of type
    'wchar_t'. */

@@ -117,5 +117,6 @@ let package = Package(
             ],
             swiftSettings: [.interoperabilityMode(.Cxx)]
         ),
-    ]
+    ],
+    cLanguageStandard: .gnu2x
 )
