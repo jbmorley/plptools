@@ -61,6 +61,8 @@ extern std::string epoc_basename(std::string path);
 */
 extern char *epoc_dirname(const char *path);
 
+extern std::string get_cwd();
+
 /**
 * Returns a new absolute EPOC path, determined by resolving `path` relative to `initialPath`.
 *

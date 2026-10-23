@@ -74,7 +74,8 @@ libplp_la_SOURCES = \
 	socketchannel.cc \
 	tcpsocket.cc \
 	uuid.cc \
-	wprt.cc
+	wprt.cc \
+	json.hpp
 
 noinst_HEADERS = \
 	bufferarray.h \

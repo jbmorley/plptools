@@ -113,6 +113,16 @@ char *pathutils::epoc_dirname(const char *path) {
     return f1;
 }
 
+// TODO: This isn't safe.
+std::string pathutils::get_cwd() {
+    char buf[PATH_MAX];
+    std::string cwd;
+    if (getcwd(buf, sizeof(buf))) {
+        cwd = buf;
+    }
+    return cwd;
+}
+
 char *pathutils::resolve_epoc_path(const char *path, const char *relativeToPath) {
     char *f1;
 
